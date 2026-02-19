@@ -1,0 +1,333 @@
+{
+  "id": "partograma",
+  "realm": "partograma",
+  "displayName": "Partograma LCG",
+  "displayNameHtml": "<b>Partograma</b> WHO Labour Care Guide 2020",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "accessTokenLifespan": 28800,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "defaultSignatureAlgorithm": "RS256",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["pt-BR", "en"],
+  "defaultLocale": "pt-BR",
+  "roles": {
+    "realm": [
+      {
+        "name": "ENFERMEIRO_OBSTETRA",
+        "description": "Enfermeiro(a) Obstetra — CRUD de episódios, observações e planos",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "MEDICO_OBSTETRA",
+        "description": "Médico(a) Obstetra — CRUD de episódios, observações e planos",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "SUPERVISOR",
+        "description": "Supervisor — Visualiza audit/logs e relatórios",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "AUDITOR",
+        "description": "Auditor — Somente leitura de todo o sistema",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administrador — Gerencia usuários e configurações",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "Equipe Clínica",
+      "realmRoles": ["ENFERMEIRO_OBSTETRA"]
+    },
+    {
+      "name": "Equipe Médica",
+      "realmRoles": ["MEDICO_OBSTETRA"]
+    },
+    {
+      "name": "Gestão",
+      "realmRoles": ["SUPERVISOR"]
+    },
+    {
+      "name": "Auditoria",
+      "realmRoles": ["AUDITOR"]
+    },
+    {
+      "name": "Administração",
+      "realmRoles": ["ADMIN"]
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "partograma-api",
+      "roles": ["ENFERMEIRO_OBSTETRA", "MEDICO_OBSTETRA", "SUPERVISOR", "AUDITOR", "ADMIN"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "partograma-web",
+      "name": "Partograma Web (Frontend)",
+      "description": "Client público para o frontend Next.js (SPA/PKCE)",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "adminUrl": "http://localhost:3000",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/*",
+        "login_theme": "keycloak"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "unit-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "unit_id",
+            "user.attribute": "unit_id",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "partograma-api",
+      "name": "Partograma API (Backend)",
+      "description": "Client confidencial para o backend NestJS — valida tokens",
+      "enabled": true,
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "partograma-api-dev-secret",
+      "bearerOnly": false,
+      "redirectUris": [
+        "http://localhost:4000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:4000"
+      ],
+      "attributes": {
+        "use.refresh.tokens": "true",
+        "client_credentials.use_refresh_token": "false"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "unit-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "unit_id",
+            "user.attribute": "unit_id",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "enfermeira.ana",
+      "email": "ana.enfermeira@partograma.dev",
+      "firstName": "Ana",
+      "lastName": "Silva",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ENFERMEIRO_OBSTETRA"],
+      "attributes": {
+        "unit_id": ["unit-001"]
+      }
+    },
+    {
+      "username": "dr.carlos",
+      "email": "carlos.medico@partograma.dev",
+      "firstName": "Carlos",
+      "lastName": "Oliveira",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["MEDICO_OBSTETRA"],
+      "attributes": {
+        "unit_id": ["unit-001"]
+      }
+    },
+    {
+      "username": "supervisor.maria",
+      "email": "maria.supervisora@partograma.dev",
+      "firstName": "Maria",
+      "lastName": "Santos",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["SUPERVISOR"],
+      "attributes": {
+        "unit_id": ["unit-001"]
+      }
+    },
+    {
+      "username": "auditor.pedro",
+      "email": "pedro.auditor@partograma.dev",
+      "firstName": "Pedro",
+      "lastName": "Costa",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["AUDITOR"],
+      "attributes": {
+        "unit_id": ["unit-001"]
+      }
+    },
+    {
+      "username": "admin.julia",
+      "email": "julia.admin@partograma.dev",
+      "firstName": "Julia",
+      "lastName": "Ferreira",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"],
+      "attributes": {
+        "unit_id": ["unit-001"]
+      }
+    }
+  ]
+}
