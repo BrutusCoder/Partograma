@@ -1,0 +1,54 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "noEmit": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@partograma/domain": [
+        "../../libs/domain/src/index.ts"
+      ],
+      "@partograma/domain/*": [
+        "../../libs/domain/src/*"
+      ],
+      "@partograma/validators": [
+        "../../libs/validators/src/index.ts"
+      ],
+      "@partograma/validators/*": [
+        "../../libs/validators/src/*"
+      ],
+      "@partograma/ui": [
+        "../../libs/ui/src/index.ts"
+      ],
+      "@partograma/ui/*": [
+        "../../libs/ui/src/*"
+      ]
+    },
+    "allowJs": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

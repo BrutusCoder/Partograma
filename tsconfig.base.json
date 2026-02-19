@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "paths": {
+      "@partograma/domain": ["./libs/domain/src/index.ts"],
+      "@partograma/domain/*": ["./libs/domain/src/*"],
+      "@partograma/validators": ["./libs/validators/src/index.ts"],
+      "@partograma/validators/*": ["./libs/validators/src/*"],
+      "@partograma/ui": ["./libs/ui/src/index.ts"],
+      "@partograma/ui/*": ["./libs/ui/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "build", ".next", "coverage"]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "partograma-lcg",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aplicação Web Partograma WHO Labour Care Guide (LCG 2020)",
+  "author": "Equipe Partograma",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.30.0",
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:web": "pnpm --filter @partograma/web dev",
+    "dev:api": "pnpm --filter @partograma/api dev",
+    "build": "pnpm run --parallel build",
+    "build:web": "pnpm --filter @partograma/web build",
+    "build:api": "pnpm --filter @partograma/api build",
+    "lint": "pnpm run --parallel lint",
+    "lint:fix": "pnpm run --parallel lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "test": "pnpm run --parallel test",
+    "test:web": "pnpm --filter @partograma/web test",
+    "test:api": "pnpm --filter @partograma/api test",
+    "test:e2e": "pnpm --filter @partograma/api test:e2e",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "db:migrate": "pnpm --filter @partograma/api migration:run",
+    "db:seed": "pnpm --filter @partograma/api seed:run",
+    "clean": "pnpm run --parallel clean && rm -rf node_modules"
+  }
+}

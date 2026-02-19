@@ -1,0 +1,93 @@
+# =============================================================================
+# Partograma LCG - Docker Compose (Ambiente de Desenvolvimento)
+# Serviços: PostgreSQL 16 + Redis 7 + Keycloak 23
+# =============================================================================
+
+services:
+  # -------------------------------------------------------------------------
+  # PostgreSQL 16 - Banco de dados principal
+  # -------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: partograma-postgres
+    restart: unless-stopped
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-partograma}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-partograma_dev}
+      POSTGRES_DB: ${DB_NAME:-partograma_lcg}
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=pt_BR.UTF-8'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-partograma} -d ${DB_NAME:-partograma_lcg}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - partograma-net
+
+  # -------------------------------------------------------------------------
+  # Redis 7 - Cache, sessões e fila de tarefas (Bull)
+  # -------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: partograma-redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - partograma-net
+
+  # -------------------------------------------------------------------------
+  # Keycloak 23 - Autenticação OIDC/OAuth2
+  # -------------------------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: partograma-keycloak
+    restart: unless-stopped
+    ports:
+      - '${KEYCLOAK_PORT:-8080}:8080'
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-partograma_lcg}
+      KC_DB_USERNAME: ${DB_USERNAME:-partograma}
+      KC_DB_PASSWORD: ${DB_PASSWORD:-partograma_dev}
+      KC_DB_SCHEMA: keycloak
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME_STRICT: 'false'
+      KC_PROXY: edge
+      KC_HTTP_ENABLED: 'true'
+    command: start-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'exec 3<>/dev/tcp/localhost/8080 && echo -e "GET /health/ready HTTP/1.1\r\nHost: localhost\r\n\r\n" >&3 && cat <&3 | grep -q "200"']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - partograma-net
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  partograma-net:
+    driver: bridge
