@@ -8,6 +8,8 @@ import { UnitModule } from './modules/unit/unit.module';
 import { UserModule } from './modules/user/user.module';
 import { EpisodeModule } from './modules/episode/episode.module';
 import { LcgFormModule } from './modules/lcg-form/lcg-form.module';
+import { ObservationModule } from './modules/observation/observation.module';
+import { PlanModule } from './modules/plan/plan.module';
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { LcgFormModule } from './modules/lcg-form/lcg-form.module';
     UserModule,
     EpisodeModule,
     LcgFormModule,
+    ObservationModule,
+    PlanModule,
   ],
   controllers: [],
   providers: [],

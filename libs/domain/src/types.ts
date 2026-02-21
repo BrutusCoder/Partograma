@@ -172,6 +172,38 @@ export interface Section7Data {
   reassessmentTime: string;
 }
 
+// --- Entidade: Plan (Seção 7 como artefato persistente) ---
+// Fonte: Plano_Implementacao §3.1 — "Plan: Seção 7 (avaliação e plano)"
+// Regra: Plan é **obrigatório quando há alerta** (1:1 com ObservationSet).
+// Imutabilidade: Plan não deve ser editado diretamente; correções via AuditLog/adendo.
+export interface Plan {
+  id: string;
+  /** FK 1:1 para ObservationSet — unique constraint na persistência */
+  observationSetId: string;
+  /** Avaliação clínica global (texto livre) */
+  assessment: string;
+  /** Status materno — OK ou CONCERNS (a confirmar) */
+  maternalStatus?: ClinicalStatus;
+  /** Descrição adicional do status materno */
+  maternalStatusDescription?: string;
+  /** Status fetal — OK ou CONCERNS (a confirmar) */
+  fetalStatus?: ClinicalStatus;
+  /** Descrição adicional do status fetal */
+  fetalStatusDescription?: string;
+  /** Progresso do trabalho de parto */
+  progressStatus?: ProgressStatus;
+  /** Evidência clínica para o status de progresso */
+  progressEvidence?: string;
+  /** Plano de ação definido na decisão compartilhada */
+  plan: string;
+  /** Horário agendado para reavaliação (ISO 8601) */
+  reassessmentTime: string;
+  /** Quem criou o Plan (userId) */
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // --- Entidade: ObservationSet (Rodada de observações) ---
 export interface ObservationSet {
   id: string;
@@ -186,6 +218,8 @@ export interface ObservationSet {
   hasAlert: boolean;
   recordedBy: string;
   createdAt: string;
+  /** Plan vinculado (1:1, obrigatório quando hasAlert === true) */
+  plan?: Plan;
 }
 
 // --- Entidade: Alert ---
