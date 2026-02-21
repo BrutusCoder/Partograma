@@ -16,9 +16,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
-    "migration:generate": "typeorm migration:generate -d src/config/typeorm.config.ts",
-    "migration:run": "typeorm migration:run -d src/config/typeorm.config.ts",
-    "migration:revert": "typeorm migration:revert -d src/config/typeorm.config.ts",
+    "migration:generate": "ts-node -r tsconfig-paths/register --project tsconfig.typeorm.json ../../node_modules/typeorm/cli.js migration:generate -d src/config/typeorm.config.ts",
+    "migration:run": "ts-node -r tsconfig-paths/register --project tsconfig.typeorm.json ../../node_modules/typeorm/cli.js migration:run -d src/config/typeorm.config.ts",
+    "migration:revert": "ts-node -r tsconfig-paths/register --project tsconfig.typeorm.json ../../node_modules/typeorm/cli.js migration:revert -d src/config/typeorm.config.ts",
+    "migration:create": "typeorm migration:create",
     "seed:run": "ts-node src/database/seeds/run-seed.ts"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "class-validator": "^0.14.0",
     "compression": "^1.7.0",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.3.1",
     "helmet": "^8.0.0",
     "ioredis": "^5.4.0",
     "passport": "^0.7.0",
