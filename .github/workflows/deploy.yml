@@ -1,0 +1,248 @@
+# =============================================================================
+# Deploy — Partograma LCG
+# Dispara em:
+#   • Push de tag semântica:  v*.*.*
+#   • Despacho manual (workflow_dispatch) com escolha de ambiente
+#
+# Jobs:
+#   1. build-push-images  — build + push de API e Web para GHCR (paralelo)
+#   2. deploy-k8s         — aplica manifests K8s no ambiente escolhido
+#
+# Secrets obrigatórios no repositório (Settings → Secrets and variables):
+#   KUBECONFIG_STAGING     — kubeconfig codificado em base64 do cluster staging
+#   KUBECONFIG_PRODUCTION  — kubeconfig codificado em base64 do cluster produção
+#   NEXT_PUBLIC_API_URL    — URL pública da API (ex: https://api.partograma.dev)
+#
+# O GHCR usa o GITHUB_TOKEN automático — não precisa secret adicional.
+# =============================================================================
+
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'        # ex: v1.2.3
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'      # ex: v1.2.3-rc.1
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente de destino'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: 'Tag da imagem (ex: v1.2.3). Deixe vazio para usar o SHA.'
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # Em deploy não cancelamos execuções em andamento
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.30.0'
+  REGISTRY: ghcr.io
+  # Imagens publicadas em:
+  #   ghcr.io/brutuscoder/partograma-api
+  #   ghcr.io/brutuscoder/partograma-web
+  IMAGE_API: ghcr.io/${{ github.repository_owner }}/partograma-api
+  IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/partograma-web
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # JOB 1 — build-push-api
+  # Compila e publica a imagem da API no GHCR.
+  # ---------------------------------------------------------------------------
+  build-push-api:
+    name: Build & Push — API
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      packages: write   # Necessário para push no GHCR
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login automático no GHCR via GITHUB_TOKEN
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Gera tags semânticas: latest, v1.2.3, v1.2, v1
+      - name: Extract Docker metadata — API
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_API }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Build + push com cache GHA (reutiliza layers entre runs)
+      - name: Build & Push — partograma-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+  # ---------------------------------------------------------------------------
+  # JOB 2 — build-push-web
+  # Compila e publica a imagem do Web (Next.js) no GHCR.
+  # ---------------------------------------------------------------------------
+  build-push-web:
+    name: Build & Push — Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata — Web
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_WEB }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & Push — partograma-web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  # ---------------------------------------------------------------------------
+  # JOB 3 — deploy-k8s
+  # Aplica os manifests Kubernetes no ambiente correto.
+  # Aguarda ambas as imagens serem publicadas antes de prosseguir.
+  #
+  # Pré-requisito: criar a pasta k8s/ com os manifests (Deployment, Service,
+  # Ingress) e adicionar os secrets KUBECONFIG_STAGING / KUBECONFIG_PRODUCTION.
+  # ---------------------------------------------------------------------------
+  deploy-k8s:
+    name: Deploy K8s — ${{ github.event.inputs.environment || 'staging' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build-push-api, build-push-web]
+
+    environment:
+      name: ${{ github.event.inputs.environment || 'staging' }}
+      url: ${{ github.event.inputs.environment == 'production' && 'https://partograma.dev' || 'https://staging.partograma.dev' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Determina qual kubeconfig usar baseado no ambiente
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+          else
+            echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > ~/.kube/config
+          fi
+          chmod 600 ~/.kube/config
+
+      # Instala kubectl
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      # Determina a tag da imagem a usar (input manual ou SHA do commit)
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [[ -n "${{ github.event.inputs.image_tag }}" ]]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=sha-$(echo ${{ github.sha }} | head -c 7)" >> $GITHUB_OUTPUT
+          fi
+
+      # Substitui a tag nos manifests e aplica no cluster
+      # Adapte os caminhos dos manifests conforme sua estrutura k8s/
+      - name: Deploy — API
+        run: |
+          # Garante que o namespace exista
+          kubectl create namespace partograma --dry-run=client -o yaml | kubectl apply -f -
+          # Atualiza a imagem no Deployment da API
+          kubectl set image deployment/partograma-api \
+            api=${{ env.IMAGE_API }}:${{ steps.tag.outputs.tag }} \
+            -n partograma
+          kubectl rollout status deployment/partograma-api -n partograma --timeout=120s
+
+      - name: Deploy — Web
+        run: |
+          kubectl set image deployment/partograma-web \
+            web=${{ env.IMAGE_WEB }}:${{ steps.tag.outputs.tag }} \
+            -n partograma
+          kubectl rollout status deployment/partograma-web -n partograma --timeout=120s
+
+      # Smoke test pós-deploy: verifica se os endpoints respondem
+      - name: Smoke test — health endpoints
+        run: |
+          ENV_URL="${{ github.event.inputs.environment == 'production' && 'https://partograma.dev' || 'https://staging.partograma.dev' }}"
+          echo "Verificando $ENV_URL..."
+          curl --fail --retry 5 --retry-delay 10 --max-time 30 "$ENV_URL" -o /dev/null -s
+          echo "✓ Deploy validado com sucesso"

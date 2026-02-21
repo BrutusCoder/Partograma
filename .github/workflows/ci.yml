@@ -1,0 +1,212 @@
+# =============================================================================
+# CI — Partograma LCG
+# Dispara em: pull_requests e pushes para main/develop
+# Jobs paralelos: lint-format | build-test-api | build-test-web
+# Job final    : docker-build (valida Dockerfiles, sem push)
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+# Cancela execuções duplicadas no mesmo branch/PR para economizar minutos
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.30.0'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # JOB 1 — lint-format
+  # Valida formatação Prettier e ESLint para todos os pacotes do monorepo.
+  # Não precisa compilar — roda diretamente nos arquivos TypeScript via eslint.
+  # ---------------------------------------------------------------------------
+  lint-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Verifica formatação Prettier (todos os arquivos ts/tsx/js/json/css/md)
+      - name: Prettier — format check
+        run: pnpm format:check
+
+      # ESLint em cada pacote com script `lint`
+      - name: ESLint — api, web, domain, validators
+        run: pnpm run --parallel lint
+
+  # ---------------------------------------------------------------------------
+  # JOB 2 — build-test-api
+  # Build sequencial: domain → validators → api
+  # Roda testes unitários e e2e (passWithNoTests para ambiente de CI sem DB).
+  # ---------------------------------------------------------------------------
+  build-test-api:
+    name: Build & Test — API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Compila as libs de domínio e validadores (dependências da API)
+      - name: Build — @partograma/domain
+        run: pnpm --filter @partograma/domain build
+
+      - name: Build — @partograma/validators
+        run: pnpm --filter @partograma/validators build
+
+      # Compila a API NestJS via nest build
+      - name: Build — @partograma/api
+        run: pnpm --filter @partograma/api build
+
+      # Testes unitários (--passWithNoTests permite CI sem suite ainda)
+      - name: Test (unit) — @partograma/api
+        run: pnpm --filter @partograma/api test
+        env:
+          NODE_ENV: test
+
+      # Upload do artefato compilado para uso no job docker-build
+      - name: Upload API dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dist
+          path: apps/api/dist/
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # JOB 3 — build-test-web
+  # Build sequencial: domain → validators → web (Next.js)
+  # Roda testes unitários com jest-environment-jsdom.
+  # ---------------------------------------------------------------------------
+  build-test-web:
+    name: Build & Test — Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Compila as libs de domínio e validadores (dependências do web)
+      - name: Build — @partograma/domain
+        run: pnpm --filter @partograma/domain build
+
+      - name: Build — @partograma/validators
+        run: pnpm --filter @partograma/validators build
+
+      # Build do Next.js (usa output: standalone)
+      - name: Build — @partograma/web
+        run: pnpm --filter @partograma/web build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+
+      # Testes unitários React (jsdom)
+      - name: Test (unit) — @partograma/web
+        run: pnpm --filter @partograma/web test
+        env:
+          NODE_ENV: test
+
+  # ---------------------------------------------------------------------------
+  # JOB 4 — docker-build
+  # Constrói as imagens Docker da API e Web para validar os Dockerfiles.
+  # NÃO faz push — apenas garante que a imagem é buildável (CI gate).
+  # Usa buildx com cache para acelerar builds repetidos.
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build-test-api, build-test-web]
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Habilita QEMU (multi-arch) e Buildx (cache avançado)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build da imagem da API (sem push)
+      - name: Docker build — partograma-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: partograma-api:ci-${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      # Build da imagem do Web (sem push)
+      - name: Docker build — partograma-web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: partograma-web:ci-${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:4000
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
