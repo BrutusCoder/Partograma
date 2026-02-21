@@ -47,3 +47,9 @@ temp/
 
 # TypeScript
 *.tsbuildinfo
+
+# Build artifacts in source dirs (tsc --build)
+libs/*/src/**/*.js
+libs/*/src/**/*.js.map
+libs/*/src/**/*.d.ts
+libs/*/src/**/*.d.ts.map

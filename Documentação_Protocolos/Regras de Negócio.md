@@ -10,12 +10,12 @@ Fonte: manual oficial do LCG (OMS, 2020).
 **Escopo de uso e início do formulário**
 
 - **RG-1 (Início do LCG):** o LCG deve ser iniciado quando a mulher entra na **fase ativa do 1º período**, definida no manual como **≥ 5 cm de dilatação**.
-    - **Obrigatório capturar:** activeLabourDiagnosisDate (data; idealmente data/hora).
+  - **Obrigatório capturar:** activeLabourDiagnosisDate (data; idealmente data/hora).
 - **RG-2 (Eixo de tempo):** todo registro clínico nas seções 2–7 deve ter **timestamp** (recordedAt) e estar associado ao eixo de tempo do LCG.
 - **RG-3 (Janela máxima do formulário):** se o trabalho de parto **exceder 12 horas** desde o início do LCG, o manual orienta **continuar em um novo LCG**.
-    - Regra de sistema: ao atingir 12h, **bloquear novas colunas** e oferecer ação “Abrir novo LCG mantendo vínculo do caso”.
+  - Regra de sistema: ao atingir 12h, **bloquear novas colunas** e oferecer ação “Abrir novo LCG mantendo vínculo do caso”.
 - **RG-4 (Alert é limiar, não diagnóstico):** qualquer observação que atinja critério de “Alert” deve ser **marcada** e deve gerar tarefa: “**Notificar profissional sênior** + registrar avaliação/ação”.
-    - Regra de sistema: criar **evento de alerta** com log: quem, quando, qual item, valor, e plano.
+  - Regra de sistema: criar **evento de alerta** com log: quem, quando, qual item, valor, e plano.
 - **RG-5 (Nomenclatura):** campos não numéricos devem usar **valores codificados** (ex.: N/Y, SP etc.) para padronizar dados e permitir auditoria.
 - **RG-6 (Auditoria):** toda alteração posterior em um registro deve manter **histórico (versionamento)**: valor antigo, novo, autor, data/hora, motivo.
 
@@ -54,8 +54,8 @@ Campos (não é série temporal; é “cabeçalho” do episódio).
 
 - **Obrigatório (pelo menos uma opção):** riskFactors (lista; pode ser “Nenhum”).
 - **Regra de negócio:** se houver qualquer fator de risco selecionado, o sistema deve:
-    - **elevar a vigilância** (ex.: encurtar intervalos sugeridos no UI)
-    - **marcar o caso** como “não baixo risco” (sem impedir uso do LCG).
+  - **elevar a vigilância** (ex.: encurtar intervalos sugeridos no UI)
+  - **marcar o caso** como “não baixo risco” (sem impedir uso do LCG).
 
 **Seção 2 — Cuidados de suporte (Supportive care)**
 
@@ -69,15 +69,15 @@ O manual mostra “Alert column” com **N** para Companion/Pain relief/Oral flu
 - **Obrigatório por registro:** sim (seção 2 deve ser preenchida em cada “rodada”).
 - **Alert:** se N → **ALERTA**.
 - **Ação sugerida (sistema):** criar plano rápido:
-    - “Oferecer acompanhante escolhido, se desejado e permitido”
-    - registrar motivo se não possível (campo barrierReason).
+  - “Oferecer acompanhante escolhido, se desejado e permitido”
+  - registrar motivo se não possível (campo barrierReason).
 
 **2.2 Alívio da dor (Pain relief)**
 
 - **Campo:** painReliefProvided (enum: Y, N)
 - **Alert:** se N → **ALERTA** (não é “obrigar analgesia”; é checar oferta/necessidade).
 - **Regras úteis para app:**
-    - Se N, exigir mini-campo: painReliefOffered (Y/N) e womanDeclined (Y/N) para diferenciar “não ofertado” de “não desejado”.
+  - Se N, exigir mini-campo: painReliefOffered (Y/N) e womanDeclined (Y/N) para diferenciar “não ofertado” de “não desejado”.
 
 **2.3 Líquidos via oral (Oral fluid)**
 
@@ -111,12 +111,12 @@ Série temporal.
 - **Campo:** amnioticFluid (enum)
 - **Alert (manual):** M+++ (mecônio espesso) e B (blood).
 - **Sugestão de modelagem:**
-    - CLEAR
-    - MECONIUM_LIGHT (M+)
-    - MECONIUM_MODERATE (M++)
-    - MECONIUM_THICK (M+++)
-    - BLOOD (B)
-    - UNKNOWN
+  - CLEAR
+  - MECONIUM_LIGHT (M+)
+  - MECONIUM_MODERATE (M++)
+  - MECONIUM_THICK (M+++)
+  - BLOOD (B)
+  - UNKNOWN
 - **Regra:** se MECONIUM_THICK ou BLOOD → **ALERTA**.
 
 **3.4 Posição fetal (Fetal position)**
@@ -169,8 +169,8 @@ Série temporal.
 - **Campo:** urineFindings (lista/enum)
 - **Alert (manual):** P++ (proteinúria ≥++) e A++ (acetona/cetonúria ≥++)
 - **Modelagem recomendada:**
-    - protein: NEG/TRACE/+/++/+++
-    - ketones: NEG/TRACE/+/++/+++
+  - protein: NEG/TRACE/+/++/+++
+  - ketones: NEG/TRACE/+/++/+++
 - **Regra:** se protein ≥ ++ ou ketones ≥ ++ → **ALERTA**.
 
 **Seção 5 — Progresso do trabalho de parto (Labour progress)**
@@ -195,16 +195,16 @@ Aqui o LCG não usa “linha de alerta/ação” clássica; ele usa **limiares p
 - **Campo:** cervicalDilationCm (0–10; com decimais opcionais)
 - **Obrigatório:** sim nos momentos de toque.
 - **Alert por “tempo sem progressão” (manual, por dilatação):**
-    - **5 cm:** se demora ≥ 6h para ir a 6 cm → **ALERTA**
-    - **6 cm:** ≥ 5h
-    - **7 cm:** ≥ 3h
-    - **8 cm:** ≥ 2.5h
-    - **9 cm:** ≥ 2h
+  - **5 cm:** se demora ≥ 6h para ir a 6 cm → **ALERTA**
+  - **6 cm:** ≥ 5h
+  - **7 cm:** ≥ 3h
+  - **8 cm:** ≥ 2.5h
+  - **9 cm:** ≥ 2h
 - **Regra de sistema (crítica):** ao registrar uma dilatação, o app deve:
-    - localizar o **último registro de dilatação** (anterior)
-    - calcular deltaCm e deltaTime
-    - se deltaCm &lt; 1 e deltaTime &gt;= threshold(currentCm) → gerar **ALERTA de progressão**
-    - exigir preenchimento imediato em Seção 7: **avaliação e plano** (justificativa/ação).
+  - localizar o **último registro de dilatação** (anterior)
+  - calcular deltaCm e deltaTime
+  - se deltaCm &lt; 1 e deltaTime &gt;= threshold(currentCm) → gerar **ALERTA de progressão**
+  - exigir preenchimento imediato em Seção 7: **avaliação e plano** (justificativa/ação).
 
 Isso é a “regra de negócio” que substitui o antigo “1 cm/h + linha de ação”.
 
@@ -221,12 +221,12 @@ Série temporal.
 **6.1 Ocitocina (Oxytocin (U/L, drops/min))**
 
 - **Campos obrigatórios quando usada:**
-    - oxytocinUsed (Y/N)
-    - se Y: oxytocinConcentrationUperL, dropsPerMin (ou mUI/min conforme bomba)
+  - oxytocinUsed (Y/N)
+  - se Y: oxytocinConcentrationUperL, dropsPerMin (ou mUI/min conforme bomba)
 - **Regra de segurança:** se ocitocina = Y, o sistema deve exigir preenchimento sincronizado de:
-    - contrações (5.1 e 5.2)
-    - FCF (3.1 e/ou 3.2)
-    - porque são os “parâmetros de vigilância” de risco.
+  - contrações (5.1 e 5.2)
+  - FCF (3.1 e/ou 3.2)
+  - porque são os “parâmetros de vigilância” de risco.
 
 **6.2 Outros medicamentos (Medicine)**
 
@@ -248,9 +248,9 @@ Série temporal (a cada rodada, ou pelo menos sempre que houver alerta).
 - **Obrigatório:** texto estruturado curto (ou campos estruturados + texto).
 - **Regra:** quando qualquer item em 2–6 gerar **ALERTA**, esta seção vira **obrigatória** para salvar o “ciclo”.
 - Sugestão de estrutura:
-    - maternalStatus: ok/concerns + descrição
-    - fetalStatus: ok/concerns + descrição
-    - progressStatus: adequado/lento/indeterminado + evidências
+  - maternalStatus: ok/concerns + descrição
+  - fetalStatus: ok/concerns + descrição
+  - progressStatus: adequado/lento/indeterminado + evidências
 
 **7.2 Plano (Plan)**
 
@@ -266,12 +266,12 @@ Série temporal (a cada rodada, ou pelo menos sempre que houver alerta).
 
 - **UX-1 (Entrada rápida):** suporte a “rodadas” (um botão “Nova avaliação agora”) que abre Seções 2–7 com o mesmo timestamp.
 - **UX-2 (Alertas visuais):** quando um valor atingir “Alert”, o sistema:
-    - destaca em vermelho
-    - cria uma tarefa “notificar sênior”
-    - Chamar a IA \[Configurada\] \[Gemini, Grook ou outra\], para sugerir o plano de alerta.
-    - Abre modal da Seção 7 para completar avaliação/plano \[tranzendo a sugestão da IA\].
+  - destaca em vermelho
+  - cria uma tarefa “notificar sênior”
+  - Chamar a IA \[Configurada\] \[Gemini, Grook ou outra\], para sugerir o plano de alerta.
+  - Abre modal da Seção 7 para completar avaliação/plano \[tranzendo a sugestão da IA\].
 - **UX-3 (Continuar além de 12h):** wizard de “novo LCG” com:
-    - copiar cabeçalho (Seção 1)
-    - manter histórico encadeado.
+  - copiar cabeçalho (Seção 1)
+  - manter histórico encadeado.
 - **DATA-1 (Padronização):** enums e escalas (caput/moulding, meconium) devem ser padronizados para permitir relatórios.
 - **DATA-2 (Confiabilidade legal):** registros só podem ser “corrigidos” com **adendo**, nunca sobrescrever sem log.

@@ -4,6 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bull';
 import { appConfig, databaseConfig, redisConfig, authConfig } from './config/app.config';
+import { UnitModule } from './modules/unit/unit.module';
+import { UserModule } from './modules/user/user.module';
+import { EpisodeModule } from './modules/episode/episode.module';
+import { LcgFormModule } from './modules/lcg-form/lcg-form.module';
 
 @Module({
   imports: [
@@ -53,14 +57,11 @@ import { appConfig, databaseConfig, redisConfig, authConfig } from './config/app
     // Agendador de tarefas
     ScheduleModule.forRoot(),
 
-    // Módulos da aplicação serão adicionados aqui
-    // EpisodeModule,
-    // LcgFormModule,
-    // ObservationModule,
-    // AlertModule,
-    // AuditModule,
-    // AuthModule,
-    // UserModule,
+    // Módulos da aplicação (Sprint 1)
+    UnitModule,
+    UserModule,
+    EpisodeModule,
+    LcgFormModule,
   ],
   controllers: [],
   providers: [],
