@@ -48,29 +48,29 @@ pnpm dev
 
 ### Comandos Úteis
 
-| Comando | Descrição |
-|---------|-----------|
-| `pnpm dev` | Inicia frontend e backend em modo dev |
-| `pnpm dev:web` | Apenas frontend (localhost:3000) |
-| `pnpm dev:api` | Apenas backend (localhost:4000) |
-| `pnpm build` | Build de produção |
-| `pnpm test` | Executar testes |
-| `pnpm lint` | Verificar linting |
-| `pnpm format` | Formatar código |
-| `pnpm docker:up` | Subir serviços Docker |
-| `pnpm docker:down` | Parar serviços Docker |
-| `pnpm db:migrate` | Rodar migrações |
+| Comando            | Descrição                             |
+| ------------------ | ------------------------------------- |
+| `pnpm dev`         | Inicia frontend e backend em modo dev |
+| `pnpm dev:web`     | Apenas frontend (localhost:3000)      |
+| `pnpm dev:api`     | Apenas backend (localhost:4000)       |
+| `pnpm build`       | Build de produção                     |
+| `pnpm test`        | Executar testes                       |
+| `pnpm lint`        | Verificar linting                     |
+| `pnpm format`      | Formatar código                       |
+| `pnpm docker:up`   | Subir serviços Docker                 |
+| `pnpm docker:down` | Parar serviços Docker                 |
+| `pnpm db:migrate`  | Rodar migrações                       |
 
 ### Acessos em Desenvolvimento
 
-| Serviço | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| API | http://localhost:4000 |
-| Swagger | http://localhost:4000/api/docs |
-| Keycloak | http://localhost:8080 (admin/admin) |
+| Serviço    | URL                                        |
+| ---------- | ------------------------------------------ |
+| Frontend   | http://localhost:3000                      |
+| API        | http://localhost:4000                      |
+| Swagger    | http://localhost:4000/api/docs             |
+| Keycloak   | http://localhost:8080 (admin/admin)        |
 | PostgreSQL | localhost:5432 (partograma/partograma_dev) |
-| Redis | localhost:6379 |
+| Redis      | localhost:6379                             |
 
 ## 📋 Stack Tecnológica
 
@@ -83,7 +83,7 @@ pnpm dev
 
 ## 📖 Documentação
 
-- [Requisitos](Documentação_Protocolos/Documento%20de%20Requisitos%20para%20Aplicação%20Web%20de%20Partograma%20(WHO%20Labour%20Care%20Guide%20-%20LCG%202020).md)
+- [Requisitos](<Documentação_Protocolos/Documento%20de%20Requisitos%20para%20Aplicação%20Web%20de%20Partograma%20(WHO%20Labour%20Care%20Guide%20-%20LCG%202020).md>)
 - [Regras de Negócio](Documentação_Protocolos/Regras%20de%20Negócio.md)
 - [Plano de Implementação](Documentação_Protocolos/Plano_Implementacao_TS_LCG_2020.md)
 - [Plano Completo](Documentação_Protocolos/Plano_Completo_WHOO_Partograma.md)

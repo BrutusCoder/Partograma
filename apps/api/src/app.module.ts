@@ -34,9 +34,7 @@ import { LcgFormModule } from './modules/lcg-form/lcg-form.module';
         migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
         synchronize: configService.get('database.synchronize'),
         logging: configService.get('database.logging'),
-        ssl: configService.get('database.ssl')
-          ? { rejectUnauthorized: false }
-          : false,
+        ssl: configService.get('database.ssl') ? { rejectUnauthorized: false } : false,
       }),
     }),
 

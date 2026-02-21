@@ -53,8 +53,8 @@ Desenvolver e implantar uma aplicacao web full-stack para o partograma OMS (WHO 
 
 Fluxo:
 Cliente -> Next.js -> NestJS API -> PostgreSQL
-            |              |
-         Keycloak       Bull/Redis
+| |
+Keycloak Bull/Redis
 
 ### 2.2 Monorepo (recomendado)
 

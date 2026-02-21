@@ -34,7 +34,7 @@ Este documento detalha os requisitos para o desenvolvimento de uma aplicação w
 - Suporte a Múltiplos LCGs: Gerenciamento de casos que excedem 12 horas e requerem um novo formulário LCG.
 - Interface Responsiva: Acesso via navegadores web em diferentes dispositivos.
 
-2.2. Out-of-Scope (Fora do Escopo)
+  2.2. Out-of-Scope (Fora do Escopo)
 
 - Prontuário Eletrônico Completo (PEP): A aplicação não substituirá um PEP completo, focando apenas no módulo de Partograma. Integrações com PEPs existentes podem ser consideradas em fases futuras.
 - Gerenciamento de Agendamentos: Não haverá funcionalidade de agendamento de consultas ou procedimentos.
@@ -59,7 +59,7 @@ A aplicação terá um sistema de controle de acesso baseado em funções (RBAC 
 - Não pode alterar registros de outros usuários após salvos (apenas adendos).
 - Não pode gerenciar usuários.
 
-3.2. Médico Obstetra (MO)
+  3.2. Médico Obstetra (MO)
 
 - Persona: Dr. Carlos, 45 anos, médico obstetra com 15 anos de experiência. Responsável pela supervisão clínica e tomada de decisões médicas.
 - Permissões:Todas as permissões do Enfermeiro Obstetra.
@@ -67,7 +67,7 @@ A aplicação terá um sistema de controle de acesso baseado em funções (RBAC 
 - Validar e assinar digitalmente (se implementado em fase futura) planos de cuidados.
 - Não pode gerenciar usuários.
 
-3.3. Supervisor (SUP)
+  3.3. Supervisor (SUP)
 
 - Persona: Dra. Helena, 50 anos, chefe da equipe de enfermagem obstétrica. Responsável pela gestão da equipe e qualidade do cuidado.
 - Permissões:Todas as permissões do Enfermeiro Obstetra e Médico Obstetra.
@@ -75,14 +75,14 @@ A aplicação terá um sistema de controle de acesso baseado em funções (RBAC 
 - Acessar trilhas de auditoria para fins de revisão.
 - Não pode gerenciar usuários.
 
-3.4. Auditor (AUD)
+  3.4. Auditor (AUD)
 
 - Persona: Marcos, 38 anos, profissional de auditoria hospitalar. Responsável pela conformidade e qualidade dos registros.
 - Permissões:Visualizar todos os LCGs, Episódios e trilhas de auditoria.
 - Não pode criar, editar ou excluir registros.
 - Exportar dados para análise.
 
-3.5. Administrador (ADM)
+  3.5. Administrador (ADM)
 
 - Persona: Sofia, 30 anos, analista de sistemas. Responsável pela manutenção e configuração do sistema.
 - Permissões:Todas as permissões de visualização.
@@ -214,13 +214,13 @@ A aplicação terá um sistema de controle de acesso baseado em funções (RBAC 
 - performedAt (timestamp com fuso horário)
 - ipAddress (string, opcional)
 
-5.2. Estratégia de Versionamento e Auditoria
+  5.2. Estratégia de Versionamento e Auditoria
 
 - Imutabilidade de Registros Clínicos: Uma vez que um ObservationSet é salvo, ele não pode ser alterado diretamente.
 - Correções via Adendo: Se uma correção for necessária, um novo ObservationSet deve ser criado com o timestamp atual, referenciando o registro anterior e explicando a correção na Seção 7 (Avaliação e Plano). O sistema pode marcar o registro anterior como "corrigido" ou "obsoleto" para fins de visualização, mas o dado original permanece no banco.
 - Trilha de Auditoria: Cada operação (criação, visualização, atualização de status, exportação) deve gerar um registro em AuditLog, incluindo o usuário, timestamp, tipo de operação e a entidade afetada. Para atualizações de status (ex: Episode.status), o oldValue e newValue devem ser registrados.
 
-5.3. Enums (Exemplos)
+  5.3. Enums (Exemplos)
 
 - Role: ENFERMEIRO_OBSTETRA, MEDICO_OBSTETRA, SUPERVISOR, AUDITOR, ADMIN
 - LabourOnsetType: SPONTANEOUS, INDUCED, UNKNOWN
@@ -249,9 +249,9 @@ A aplicação terá um sistema de controle de acesso baseado em funções (RBAC 
 - RG-5 (Nomenclatura Padronizada): Todos os campos com valores pré-definidos (enums) devem usar os valores codificados para garantir consistência e permitir análise de dados.
 - RG-6 (Trilha de Auditoria): Todas as ações de criação, atualização de status, visualização e exportação devem ser registradas na entidade AuditLog.
 
-6.2. Regras de Negócio por Seção
+  6.2. Regras de Negócio por Seção
 
-Seção 2: Cuidados de Suporte (Supportive Care)  
+Seção 2: Cuidados de Suporte (Supportive Care)
 
 - RG-2.1 (Acompanhante):Campo: section2.companionPresent (enum: Y, N).
 - Alert: Se companionPresent = N (Ausência de acompanhante).
@@ -262,7 +262,7 @@ Seção 2: Cuidados de Suporte (Supportive Care)
 - RG-2.4 (Postura/Posição):Campo: section2.posture (enum: SUPINE, UPRIGHT, LATERAL, SQUATTING, KNEELING, OTHER).
 - Alert: Se posture = SUPINE (Posição supina).
 
-Seção 3: Cuidados com o Bebê (Baby)  
+Seção 3: Cuidados com o Bebê (Baby)
 
 - RG-3.1 (FCF de Linha de Base):Campo: section3.fhrBaseline (inteiro, bpm).
 - Validação: fhrBaseline deve estar entre 50 e 220 bpm.
@@ -278,7 +278,7 @@ Seção 3: Cuidados com o Bebê (Baby)
 - RG-3.6 (Cavalgamento):Campo: section3.moulding (enum: 0, +, ++, +++).
 - Alert: Se moulding = +++.
 
-Seção 4: Cuidados com a Mulher (Woman)  
+Seção 4: Cuidados com a Mulher (Woman)
 
 - RG-4.1 (Pulso Materno):Campo: section4.maternalPulse (inteiro, bpm).
 - Alert: Se maternalPulse &lt; 60 ou maternalPulse &gt;= 120.
@@ -293,7 +293,7 @@ Seção 4: Cuidados com a Mulher (Woman)
 - RG-4.6 (Urina - Cetona):Campo: section4.urineKetones (enum: NEG, TRACE, +, ++, +++).
 - Alert: Se urineKetones = ++ ou urineKetones = +++.
 
-Seção 5: Progresso do Trabalho de Parto (Labour Progress)  
+Seção 5: Progresso do Trabalho de Parto (Labour Progress)
 
 - RG-5.1 (Contrações em 10 Minutos):Campo: section5.contractionsPer10Min (inteiro).
 - Alert: Se contractionsPer10Min &lt;= 2 ou contractionsPer10Min &gt; 5.
@@ -309,7 +309,7 @@ Seção 5: Progresso do Trabalho de Parto (Labour Progress)
 - RG-5.4 (Descida da Apresentação):Campo: section5.descentStation (inteiro, ex: 0 a 5, ou -3 a +3).
 - Regra: A interpretação da descida deve ser feita em conjunto com outros parâmetros (dilatação, contrações, caput/moulding). O sistema pode sugerir um alerta clínico se houver falha de descida persistente com outros sinais de obstrução, mas não é um alerta automático do LCG.
 
-Seção 6: Medicação (Medication)  
+Seção 6: Medicação (Medication)
 
 - RG-6.1 (Ocitocina):Campos: section6.oxytocinUsed (boolean), section6.oxytocinConcentrationUperL (decimal), section6.oxytocinDropsPerMin (inteiro) ou section6.oxytocinMuiPerMin (decimal).
 - Regra de Vigilância Obrigatória: Se oxytocinUsed = true, o sistema deve exigir e realçar a importância do registro frequente de:section5.contractionsPer10Min e section5.contractionDurationSec.
@@ -320,7 +320,7 @@ Seção 6: Medicação (Medication)
 - RG-6.3 (Fluidos EV):Campo: section6.ivFluids (array de objetos: {type: string, volumeMl: integer, rateMlPerHour: integer, startedAt: timestamp, endedAt: timestamp}).
 - Regra: Permitir registro de múltiplos fluidos.
 
-Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)  
+Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 
 - RG-7.1 (Avaliação e Plano Obrigatórios):Campos: section7.assessment (texto livre), section7.plan (texto livre), section7.reassessmentTime (timestamp com fuso horário).
 - Obrigatório: Esta seção é obrigatória para ser preenchida e salva em um ObservationSet sempre que qualquer item nas Seções 2 a 6 gerar um ALERTA.
@@ -338,14 +338,14 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - RF-AUTH-004: O sistema deve forçar a troca de senha no primeiro login para novos usuários.
 - RF-AUTH-005: O sistema deve ter uma política de senhas fortes (mínimo 8 caracteres, maiúsculas, minúsculas, números, símbolos).
 
-7.2. Módulo de Gerenciamento de Usuários (Apenas para ADM)
+  7.2. Módulo de Gerenciamento de Usuários (Apenas para ADM)
 
 - RF-USER-001: O Administrador deve ser capaz de criar novos usuários, atribuindo username, password inicial e role.
 - RF-USER-002: O Administrador deve ser capaz de editar informações de usuários existentes (exceto senha de outros usuários), incluindo role e isActive status.
 - RF-USER-003: O Administrador deve ser capaz de desativar usuários, impedindo o login.
 - RF-USER-004: O Administrador deve ser capaz de visualizar uma lista de todos os usuários e seus perfis.
 
-7.3. Módulo de Gerenciamento de Episódios de Parto
+  7.3. Módulo de Gerenciamento de Episódios de Parto
 
 - RF-EP-001: O usuário (EO/MO) deve ser capaz de criar um novo Episode preenchendo os dados da Seção 1.
 - RF-EP-002: O sistema deve exibir uma lista de Episodes ativos, com filtros por nome da paciente, ID, status.
@@ -353,7 +353,7 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - RF-EP-004: O usuário (EO/MO) deve ser capaz de encerrar um Episode, registrando o motivo e a data/hora.
 - RF-EP-005: O sistema deve impedir a criação de novos LCGs em Episodes encerrados.
 
-7.4. Módulo de Partograma (LCG)
+  7.4. Módulo de Partograma (LCG)
 
 - RF-LCG-001: O usuário (EO/MO) deve ser capaz de iniciar um novo LCGForm dentro de um Episode ativo, registrando a dilatação &gt;= 5 cm e a data/hora do diagnóstico de fase ativa.
 - RF-LCG-002: O sistema deve exibir a interface do LCG com as 7 seções organizadas em um formato de grade/tabela temporal.
@@ -368,13 +368,13 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - RF-LCG-011: O sistema deve permitir a exportação de um LCGForm completo para PDF.
 - RF-LCG-012: O sistema deve impedir a edição de ObservationSets após salvos; correções devem ser feitas via novo registro com adendo.
 
-7.5. Módulo de Alertas
+  7.5. Módulo de Alertas
 
 - RF-ALERT-001: O sistema deve registrar todos os alertas disparados na entidade Alert.
 - RF-ALERT-002: O sistema deve exibir uma lista de alertas ativos para um LCGForm ou Episode.
 - RF-ALERT-003: O sistema deve permitir que um alerta seja marcado como "resolvido" dentro do plano de cuidados da Seção 7.
 
-7.6. Módulo de Auditoria (Apenas para SUP/AUD/ADM)
+  7.6. Módulo de Auditoria (Apenas para SUP/AUD/ADM)
 
 - RF-AUDIT-001: O sistema deve registrar todas as operações de criação, atualização de status, visualização e exportação na entidade AuditLog.
 - RF-AUDIT-002: O usuário (SUP/AUD/ADM) deve ser capaz de visualizar a trilha de auditoria para qualquer Episode ou LCGForm.
@@ -405,9 +405,9 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - Accept: application/json
 - X-Timezone: America/Sao_Paulo (ou outro fuso horário do cliente, para consistência de timestamps)
 
-9.2. Endpoints
+  9.2. Endpoints
 
-9.2.1. Autenticação
+  9.2.1. Autenticação
 
 - POST /auth/loginDescrição: Autentica um usuário e retorna um token JWT.
 - Request Schema:{ "username": "ana.silva",&lt;br/&gt; "password": "SenhaSegura123!" }
@@ -415,7 +415,7 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - Códigos de Erro:401 Unauthorized: Credenciais inválidas.
 - 400 Bad Request: Payload inválido.
 
-9.2.2. Usuários (Apenas para ADM)
+  9.2.2. Usuários (Apenas para ADM)
 
 - GET /usersDescrição: Lista todos os usuários.
 - Response Schema (200 OK): \[{id: "...", username: "...", role: "..."}, ...\]
@@ -428,7 +428,7 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - Response Schema (200 OK): {id: "...", username: "...", role: "..."}
 - Validações: id existente, role válido.
 
-9.2.3. Episódios de Parto
+  9.2.3. Episódios de Parto
 
 - GET /episodesDescrição: Lista episódios de parto. Suporta filtros por status, patientName, patientId.
 - Response Schema (200 OK): \[{id: "...", patientName: "...", status: "...", createdAt: "..."}, ...\]
@@ -443,7 +443,7 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - Response Schema (200 OK): Retorna o objeto Episode atualizado.
 - Validações: status válido, completedAt obrigatório se status = COMPLETED.
 
-9.2.4. LCG (Formulários de Partograma)
+  9.2.4. LCG (Formulários de Partograma)
 
 - POST /episodes/{episodeId}/lcg-formsDescrição: Inicia um novo LCGForm para um Episode. Usado para o primeiro LCG ou para LCGs continuados após 12h.
 - Request Schema:{ "isContinuedForm": false, // true se for um LCG subsequente&lt;br/&gt; "startedAt": "2024-05-23T10:00:00-03:00" // Apenas para o primeiro LCG, deve ser igual a activeLabourDiagnosisAt }
@@ -452,7 +452,7 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - GET /lcg-forms/{id}Descrição: Retorna um LCGForm completo com todas as ObservationSets associadas.
 - Response Schema (200 OK):{ "id": "uuid-lcgform-1",&lt;br/&gt; "episodeId": "uuid-episode",&lt;br/&gt; "formNumber": 1,&lt;br/&gt; "isContinuedForm": false,&lt;br/&gt; "startedAt": "2024-05-23T10:00:00-03:00",&lt;br/&gt; "status": "ACTIVE",&lt;br/&gt; "observations": \[ { "id": "uuid-obs-1",&lt;br/&gt; "recordedAt": "2024-05-23T10:30:00-03:00",&lt;br/&gt; "section2": { "companionPresent": "Y", "painReliefProvided": "N", "oralFluidEncouragedOrTaken": "Y", "posture": "UPRIGHT" },&lt;br/&gt; "section3": { "fhrBaseline": 140, "fhrDeceleration": "NONE", "amnioticFluid": "CLEAR", "fetalPosition": "OA", "caput": "0", "moulding": "0" },&lt;br/&gt; "section4": { "maternalPulse": 80, "sbp": 120, "dbp": 70, "temperatureC": 36.8, "urineProtein": "NEG", "urineKetones": "NEG" },&lt;br/&gt; "section5": { "contractionsPer10Min": 3, "contractionDurationSec": 40, "cervicalDilationCm": 5.0, "descentStation": 0 },&lt;br/&gt; "section6": { "oxytocinUsed": false, "medications": \[\], "ivFluids": \[\] },&lt;br/&gt; "hasAlert": false,&lt;br/&gt; "recordedBy": "uuid-user-ana" }, // ... outras observações \] }
 
-9.2.5. Observações (Rodadas)
+  9.2.5. Observações (Rodadas)
 
 - POST /lcg-forms/{lcgFormId}/observationsDescrição: Registra uma nova rodada de observações para um LCGForm.
 - Request Schema:{ "recordedAt": "2024-05-23T11:00:00-03:00",&lt;br/&gt; "section2": { "companionPresent": "Y", "painReliefProvided": "Y", "oralFluidEncouragedOrTaken": "Y", "posture": "UPRIGHT" },&lt;br/&gt; "section3": { "fhrBaseline": 135, "fhrDeceleration": "NONE", "amnioticFluid": "CLEAR", "fetalPosition": "OA", "caput": "0", "moulding": "0" },&lt;br/&gt; "section4": { "maternalPulse": 78, "sbp": 118, "dbp": 68, "temperatureC": 36.9, "urineProtein": "NEG", "urineKetones": "NEG" },&lt;br/&gt; "section5": { "contractionsPer10Min": 4, "contractionDurationSec": 45, "cervicalDilationCm": 6.0, "descentStation": 0 },&lt;br/&gt; "section6": { "oxytocinUsed": false, "medications": \[\], "ivFluids": \[\] },&lt;br/&gt; "section7": { // Obrigatório se houver alerta&lt;br/&gt; "assessment": "Progresso adequado, mãe e bebê bem.",&lt;br/&gt; "plan": "Manter acompanhamento, reavaliar em 1 hora.",&lt;br/&gt; "reassessmentTime": "2024-05-23T12:00:00-03:00" } }
@@ -464,13 +464,13 @@ Seção 7: Tomada de Decisão Compartilhada (Shared Decision-Making)
 - RG-5.3 (Progresso Cervical): O sistema deve calcular o tempo desde a última dilatação e disparar alerta se não houver progresso de 1 cm dentro dos limiares definidos.
 - RG-6.1 (Ocitocina): Se oxytocinUsed=true, o sistema deve verificar se contractionsPer10Min e fhrBaseline foram registrados na mesma rodada ou em uma rodada muito próxima.
 
-9.2.6. Exportação
+  9.2.6. Exportação
 
 - GET /lcg-forms/{id}/export/pdfDescrição: Exporta um LCGForm completo para um arquivo PDF.
 - Response Schema (200 OK): Retorna o arquivo PDF como application/pdf.
 - Validações: id deve existir.
 
-9.2.7. Auditoria (Apenas para SUP/AUD/ADM)
+  9.2.7. Auditoria (Apenas para SUP/AUD/ADM)
 
 - GET /audit-logsDescrição: Lista registros de auditoria. Suporta filtros por entityType, entityId, performedBy, operation, dateRange.
 - Response Schema (200 OK): \[{id: "...", entityType: "...", operation: "...", performedBy: "...", performedAt: "..."}, ...\]
@@ -654,12 +654,12 @@ Um item de trabalho (história de usuário, tarefa) será considerado "Pronto" q
 - +++ (Grave)
 - UrineProtein:NEG (Negativo)
 - TRACE (Traços)
-- +
+- -
 - ++
 - +++
 - UrineKetones:NEG (Negativo)
 - TRACE (Traços)
-- +
+- -
 - ++
 - +++
 - FHRDeceleration:NONE
@@ -667,7 +667,7 @@ Um item de trabalho (história de usuário, tarefa) será considerado "Pronto" q
 - UNKNOWN
 - (Opcional: EARLY, LATE, VARIABLE, PROLONGED se o protocolo local detalhar)
 
-12.2. Tabela de Limiares de Alerta do LCG (OMS 2020)
+  12.2. Tabela de Limiares de Alerta do LCG (OMS 2020)
 
 - Seção 3: Cuidados com o Bebê FCF de Linha de Base: &lt;110 bpm ou ≥160 bpm
 - Líquido Amniótico: MECONIUM_THICK (M+++) ou BLOOD (B)
@@ -697,7 +697,7 @@ Um item de trabalho (história de usuário, tarefa) será considerado "Pronto" q
 
 O sistema deve monitorar os seguintes parâmetros e disparar um evento de alerta quando os limiares especificados forem atingidos. Estes alertas são indicadores de que uma reavaliação clínica e um plano de ação podem ser necessários.
 
-**Seção 3 (Bebê):**  
+**Seção 3 (Bebê):**
 
 - FCF Linha de Base:fhrBaseline &lt; 110 bpm
 - fhrBaseline &gt;= 160 bpm
@@ -708,7 +708,7 @@ O sistema deve monitorar os seguintes parâmetros e disparar um evento de alerta
 - Bossa Serossanguínea (Caput):caput = +++
 - Cavalgamento de Suturas (Moulding):moulding = +++
 
-**Seção 4 (Mulher):**  
+**Seção 4 (Mulher):**
 
 - Pulso Materno:maternalPulse &lt; 60 bpm
 - maternalPulse &gt;= 120 bpm
@@ -722,7 +722,7 @@ O sistema deve monitorar os seguintes parâmetros e disparar um evento de alerta
 - Urina - Cetonúria:urineKetones = ++
 - urineKetones = +++
 
-**Seção 5 (Progresso do Trabalho de Parto):**  
+**Seção 5 (Progresso do Trabalho de Parto):**
 
 - Contrações Uterinas:contractionsPer10Min &lt;= 2
 - contractionsPer10Min &gt; 5
@@ -734,7 +734,7 @@ O sistema deve monitorar os seguintes parâmetros e disparar um evento de alerta
 - De 8 cm para 9 cm: tempo decorrido &gt;= 2.5 horas
 - De 9 cm para 10 cm: tempo decorrido &gt;= 2 horas
 
-**Seção 2 (Cuidados de Suporte):**  
+**Seção 2 (Cuidados de Suporte):**
 
 - Acompanhante:companionPresent = N (Não presente)
 - Alívio da Dor:painReliefProvided = N (Não ofertado/administrado)
@@ -748,7 +748,7 @@ O sistema deve monitorar os seguintes parâmetros e disparar um evento de alerta
 - RG-LCG-01: O LCG deve ser iniciado apenas quando a mulher estiver na fase ativa do trabalho de parto, definida como dilatação cervical de 5 cm ou mais, com contrações uterinas regulares e efetivas.
 - RG-LCG-02: O sistema deve registrar a data e hora exatas do diagnóstico da fase ativa (activeLabourDiagnosisDate, activeLabourDiagnosisTime).
 
-12.3.2 Regra das 12 Horas (Chaining LCGs)
+  12.3.2 Regra das 12 Horas (Chaining LCGs)
 
 - RG-LCG-03: Se o trabalho de parto ativo (monitorado pelo LCG) exceder 12 horas desde o activeLabourDiagnosisTime do LCG atual, o sistema deve:Bloquear a adição de novas observações ao LCG atual.
 - Notificar o usuário sobre a necessidade de iniciar um novo LCG encadeado.
@@ -756,7 +756,7 @@ O sistema deve monitorar os seguintes parâmetros e disparar um evento de alerta
 - O novo LCG deve herdar os dados de identificação da mulher e do episódio de parto.
 - O activeLabourDiagnosisTime do novo LCG será a hora de sua criação.
 
-12.3.3 Imutabilidade e Adendos
+  12.3.3 Imutabilidade e Adendos
 
 - RG-LCG-04: Uma vez que uma observação (ObservationSet) ou um plano/avaliação (Seção 7) tenha sido registrado e salvo, ele não pode ser editado ou excluído diretamente.
 - RG-LCG-05: Qualquer correção ou alteração em um registro existente deve ser feita através de um adendo. O adendo deve incluir:O campo original que está sendo corrigido.
@@ -767,7 +767,7 @@ O sistema deve monitorar os seguintes parâmetros e disparar um evento de alerta
 - Motivo da correção (campo de texto livre obrigatório).
 - RG-LCG-06: Todos os adendos devem ser auditáveis e visíveis no histórico do LCG.
 
-12.3.4 Vigilância Reforçada com Ocitocina
+  12.3.4 Vigilância Reforçada com Ocitocina
 
 - RG-LCG-07: Se a ocitocina estiver sendo administrada (oxytocinUsed = Y), o sistema deve exigir que os campos de contractionsPer10Min, contractionDurationSec e fhrBaseline sejam preenchidos em cada ObservationSet subsequente enquanto a ocitocina estiver ativa.
 - RG-LCG-08: O sistema deve alertar o usuário se houver inconsistência entre a administração de ocitocina e a ausência de registros de vigilância fetal/uterina.
@@ -855,11 +855,11 @@ Este modelo conceitual pode ser adaptado para bancos de dados relacionais (SQL) 
 - details (JSONB/Object) - Detalhes da ação (ex: oldValue, newValue, reason)
 - timestamp (Timestamp)
 
-13.2 Estrutura Detalhada de ObservationSet (JSONB/Object)
+  13.2 Estrutura Detalhada de ObservationSet (JSONB/Object)
 
 Cada sectionX dentro de ObservationSet conterá os campos específicos daquela seção, com seus respectivos tipos.
 
-section2 **(Cuidados de Suporte):**  
+section2 **(Cuidados de Suporte):**
 
 - companionPresent (Enum: Y, N)
 - painReliefProvided (Enum: Y, N)
@@ -896,7 +896,7 @@ section5 **(Progresso do Trabalho de Parto):**
 - cervicalConsistency (Enum: SOFT, MEDIUM, FIRM)
 - cervicalPosition (Enum: ANTERIOR, MID, POSTERIOR)
 
-section6 **(Medicação):**  
+section6 **(Medicação):**
 
 - oxytocinUsed (Enum: Y, N)
 - oxytocinConcentrationUperL (Decimal) - Condicional se oxytocinUsed = Y
@@ -911,7 +911,7 @@ section7 **(Avaliação e Plano):**
 - reassessmentTime (Timestamp) - Próxima reavaliação planejada
 - isFinalAssessment (Boolean) - Indica se é a avaliação final do LCG
 
-13.3 Índices
+  13.3 Índices
 
 - User: username, email
 - Patient: externalId, cpf
@@ -936,7 +936,7 @@ Todos os endpoints devem exigir autenticação via JWT (JSON Web Tokens) ou OAut
 - Response Body (200 OK): (Mesmo formato de /auth/login)
 - Error (401 Unauthorized):{ "code": "AUTH_INVALID_REFRESH_TOKEN",&lt;br/&gt; "message": "Refresh token inválido ou expirado." }
 
-14.2 Gerenciamento de Pacientes
+  14.2 Gerenciamento de Pacientes
 
 - POST /patientsDescrição: Cria um novo registro de paciente.
 - Permissões: ADMIN, DOCTOR, NURSE
@@ -950,7 +950,7 @@ Todos os endpoints devem exigir autenticação via JWT (JSON Web Tokens) ou OAut
 - GET /patientsDescrição: Lista pacientes (com filtros e paginação).
 - Permissões: ADMIN, DOCTOR, NURSE, OBSERVER
 
-14.3 Gerenciamento de Episódios de Parto
+  14.3 Gerenciamento de Episódios de Parto
 
 - POST /labour-episodesDescrição: Inicia um novo episódio de parto para um paciente.
 - Permissões: ADMIN, DOCTOR, NURSE
@@ -962,7 +962,7 @@ Todos os endpoints devem exigir autenticação via JWT (JSON Web Tokens) ou OAut
 - Permissões: ADMIN, DOCTOR, NURSE
 - Request Body:{ "outcome": "VAGINAL_DELIVERY",&lt;br/&gt; "outcomeDate": "2023-10-27T18:45:00Z" }
 
-14.4 Gerenciamento de Instâncias LCG
+  14.4 Gerenciamento de Instâncias LCG
 
 - POST /labour-episodes/{episodeId}/lcg-instancesDescrição: Inicia um novo LCG para um episódio de parto.
 - Permissões: ADMIN, DOCTOR, NURSE
@@ -977,7 +977,7 @@ Todos os endpoints devem exigir autenticação via JWT (JSON Web Tokens) ou OAut
 - Response Body (201 Created): (Mesmo formato de POST /labour-episodes/{episodeId}/lcg-instances, mas com previousLcgId preenchido)
 - Error (400 Bad Request):{ "code": "LCG_CHAINING_NOT_REQUIRED",&lt;br/&gt; "message": "O LCG atual ainda não atingiu o limite de 12 horas para encadeamento." }
 
-14.5 Gerenciamento de Observações (ObservationSet)
+  14.5 Gerenciamento de Observações (ObservationSet)
 
 - POST /lcg-instances/{lcgInstanceId}/observationsDescrição: Registra um novo conjunto de observações para um LCG.
 - Permissões: ADMIN, DOCTOR, NURSE
@@ -990,7 +990,7 @@ Todos os endpoints devem exigir autenticação via JWT (JSON Web Tokens) ou OAut
 - Request Body:{ "fieldPath": "section3.fhrBaseline",&lt;br/&gt; "oldValue": 130,&lt;br/&gt; "newValue": 140,&lt;br/&gt; "reason": "Erro de digitação corrigido após reavaliação." }
 - Response Body (201 Created):{ "id": "uuid-audit-log-1",&lt;br/&gt; "userId": "uuid-user-1",&lt;br/&gt; "action": "ADD_ADDENDUM",&lt;br/&gt; "entityType": "ObservationSet",&lt;br/&gt; "entityId": "uuid-observation-1",&lt;br/&gt; "details": {&lt;br/&gt; "fieldPath": "section3.fhrBaseline",&lt;br/&gt; "oldValue": 130,&lt;br/&gt; "newValue": 140,&lt;br/&gt; "reason": "Erro de digitação corrigido após reavaliação." }, "timestamp": "2023-10-27T13:15:00Z" }
 
-14.6 Gerenciamento de Alertas
+  14.6 Gerenciamento de Alertas
 
 - GET /lcg-instances/{lcgInstanceId}/alertsDescrição: Lista todos os alertas para uma instância LCG, com filtros por status (NEW, ACKNOWLEDGED, RESOLVED).
 - Permissões: ADMIN, DOCTOR, NURSE, OBSERVER
@@ -999,7 +999,7 @@ Todos os endpoints devem exigir autenticação via JWT (JSON Web Tokens) ou OAut
 - Request Body:{ "resolutionNotes": "Alerta de FCF alta reconhecido, paciente e feto reavaliados, sem sinais de sofrimento. Monitoramento intensificado." }
 - Response Body (200 OK):{ "id": "uuid-alert-1",&lt;br/&gt; "status": "ACKNOWLEDGED",&lt;br/&gt; "acknowledgedBy": "uuid-user-1",&lt;br/&gt; "acknowledgedAt": "2023-10-27T13:05:00Z" }
 
-14.7 Exportação de Dados
+  14.7 Exportação de Dados
 
 - GET /lcg-instances/{lcgInstanceId}/export/pdfDescrição: Exporta o LCG completo (com todas as observações, alertas e adendos) em formato PDF.
 - Permissões: ADMIN, DOCTOR, NURSE, OBSERVER
@@ -1045,7 +1045,7 @@ Todos os endpoints devem exigir autenticação via JWT (JSON Web Tokens) ou OAut
 - oxytocinDropsPerMin: Integer, &gt; 0.
 - reassessmentTime: Timestamp, no futuro.
 
-15.2 Validações Cruzadas e Condicionais
+  15.2 Validações Cruzadas e Condicionais
 
 - VC-01 (Início do LCG): A primeira cervicalDilationCm registrada para um LcgInstance deve ser &gt;= 5 cm.
 - VC-02 (Progressão da Dilatação): cervicalDilationCm em um ObservationSet deve ser &gt;= à última cervicalDilationCm registrada para o mesmo LcgInstance. Não pode diminuir.
@@ -1071,7 +1071,7 @@ O motor de alertas é um componente central que processa os dados de Observation
 - Comparar o tempo decorrido com o limiar de tempo para a dilatação anterior (ex: se a dilatação anterior era 5cm, o limiar é 6h).
 - Se o tempo exceder o limiar, disparar o alerta.
 
-16.2 Persistência e Estado do Alerta
+  16.2 Persistência e Estado do Alerta
 
 - Criação: Quando um limiar é atingido, um novo AlertEvent deve ser criado com status = NEW.
 - Unicidade: Evitar a criação de alertas duplicados para o mesmo tipo de alerta e ObservationSet se o alerta já estiver NEW.
@@ -1081,7 +1081,7 @@ O motor de alertas é um componente central que processa os dados de Observation
 - RESOLVED: Alerta que foi abordado e a situação clínica foi resolvida ou o risco mitigado. O resolutionNotes é preenchido.
 - Trilha de Auditoria: Todas as mudanças de status de um AlertEvent (criação, reconhecimento, resolução) devem ser registradas em AuditLog.
 
-16.3 Notificação e Interface
+  16.3 Notificação e Interface
 
 - Notificação em Tempo Real: O sistema deve ter um mecanismo de notificação em tempo real (ex: WebSockets) para alertar os usuários logados sobre novos alertas para os LCGs que estão monitorando.
 - Visualização: Alertas NEW e ACKNOWLEDGED devem ser claramente visíveis na interface do LCG.
@@ -1093,7 +1093,7 @@ O motor de alertas é um componente central que processa os dados de Observation
 - Padrão: JWT (JSON Web Tokens) para autenticação stateless.
 - Fluxo: Login com credenciais, obtenção de accessToken (curta duração) e refreshToken (longa duração). accessToken enviado em cada requisição via header Authorization: Bearer &lt;token&gt;.
 
-17.2 Autorização (Role-Based Access Control - RBAC)
+  17.2 Autorização (Role-Based Access Control - RBAC)
 
 - Roles:ADMIN: Acesso total a todas as funcionalidades (CRUD de usuários, pacientes, episódios, LCGs, etc.).
 - DOCTOR: Acesso a todos os dados clínicos (pacientes, episódios, LCGs, observações, alertas), com permissão de CRUD em dados clínicos.
@@ -1108,19 +1108,19 @@ O motor de alertas é um componente central que processa os dados de Observation
 - GET /users: ADMIN (listar usuários)
 - Implementação: Middleware de autorização que verifica o role do usuário no token JWT contra a permissão exigida pelo endpoint.
 
-17.3 Auditoria
+  17.3 Auditoria
 
 - Log de Ações: Todas as ações de criação, atualização, exclusão e reconhecimento de alertas devem ser registradas na tabela AuditLog, incluindo userId, action, entityType, entityId, details (old/new values se aplicável) e timestamp.
 - Acesso ao Log: Apenas usuários com role = ADMIN devem ter acesso à visualização do AuditLog.
 
-17.4 Segurança de Dados
+  17.4 Segurança de Dados
 
 - TLS/SSL: Todas as comunicações entre cliente e servidor devem ser criptografadas via HTTPS (TLS 1.2+).
 - Hashing de Senhas: Senhas de usuários devem ser armazenadas como hashes (ex: bcrypt) com salt.
 - Rate Limiting: Implementar rate limiting em endpoints de autenticação e criação de recursos para prevenir ataques de força bruta e DoS.
 - Validação de Entrada: Todas as entradas de usuário devem ser rigorosamente validadas para prevenir ataques de injeção (SQL Injection, XSS).
 
-17.5 LGPD (Lei Geral de Proteção de Dados)
+  17.5 LGPD (Lei Geral de Proteção de Dados)
 
 - Anonimização/Pseudonimização: Considerar a possibilidade de anonimizar ou pseudonimizar dados de pacientes para fins de pesquisa ou relatórios, se aplicável.
 - Consentimento: A aplicação deve ter mecanismos para registrar o consentimento do paciente para o uso de seus dados (fora do escopo deste documento, mas importante para o projeto).
@@ -1240,35 +1240,35 @@ Cenário: Acesso negado para OBSERVER tentando criar observação Dado que eu es
 - Exportação de PDF/CSV deve ser concluída em menos de 5 segundos para LCGs com até 100 observações.
 - Concorrência: O sistema deve suportar 100 usuários simultâneos ativos sem degradação significativa de performance.
 
-19.2 Disponibilidade
+  19.2 Disponibilidade
 
 - Uptime: 99.9% de uptime mensal (excluindo janelas de manutenção planejadas).
 - Recuperação de Desastres: Capacidade de restaurar o serviço em até 4 horas em caso de falha catastrófica.
 
-19.3 Escalabilidade
+  19.3 Escalabilidade
 
 - A arquitetura deve ser escalável horizontalmente para suportar um aumento futuro no número de usuários e dados.
 - O banco de dados deve ser capaz de lidar com um volume crescente de ObservationSet e AlertEvents.
 
-19.4 Segurança
+  19.4 Segurança
 
 - Vulnerabilidades: A aplicação deve ser desenvolvida seguindo as melhores práticas de segurança (OWASP Top 10).
 - Criptografia: Dados sensíveis em repouso e em trânsito devem ser criptografados.
 - Testes de Segurança: Realizar testes de penetração e varreduras de segurança regularmente.
 
-19.5 Observabilidade
+  19.5 Observabilidade
 
 - Monitoramento: Implementar monitoramento de logs, métricas (CPU, memória, I/O, latência de requisições) e traces distribuídos.
 - Alertas: Configurar alertas para anomalias de performance, erros e indisponibilidade.
 - Logs: Logs detalhados (mas sem dados sensíveis) devem ser gerados para depuração e auditoria.
 
-19.6 Manutenibilidade
+  19.6 Manutenibilidade
 
 - Código: Código limpo, bem documentado e seguindo padrões de codificação.
 - Testes: Alta cobertura de testes unitários, de integração e de aceitação.
 - Deploy: Processo de CI/CD automatizado para deploys rápidos e confiáveis.
 
-19.7 Usabilidade
+  19.7 Usabilidade
 
 - Interface: Interface intuitiva e responsiva, otimizada para dispositivos desktop e tablets.
 - Feedback: Feedback visual claro para ações do usuário e status do sistema (sucesso, erro, carregamento).
@@ -1293,7 +1293,7 @@ Para que uma funcionalidade ou história de usuário seja considerada "pronta", 
 - Deployable: A funcionalidade pode ser implantada no ambiente de staging/produção via CI/CD.
 - LGPD/Privacidade: Conformidade com os requisitos de privacidade de dados.
 
-20.2 Checklist de Entrega (Release Checklist)
+  20.2 Checklist de Entrega (Release Checklist)
 
 - Todos os itens do DoD foram cumpridos para todas as histórias incluídas na release.
 - Testes de regressão completos foram executados e passaram.

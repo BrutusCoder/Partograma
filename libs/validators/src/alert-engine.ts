@@ -349,10 +349,7 @@ export function checkCervicalProgression(input: CervicalProgressionInput): Alert
 }
 
 // --- RG-6.1: Ocitocina + Hiperestimulação ---
-export function checkOxytocinAlerts(
-  section5: Section5Data,
-  section6: Section6Data,
-): AlertResult[] {
+export function checkOxytocinAlerts(section5: Section5Data, section6: Section6Data): AlertResult[] {
   const alerts: AlertResult[] = [];
 
   if (

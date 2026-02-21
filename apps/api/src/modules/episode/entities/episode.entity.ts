@@ -4,11 +4,7 @@
 // =====================================================================
 
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
-import {
-  LabourOnsetType,
-  RuptureStatus,
-  EpisodeStatus,
-} from '@partograma/domain';
+import { LabourOnsetType, RuptureStatus, EpisodeStatus } from '@partograma/domain';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { UserEntity } from '../../user/entities/user.entity';
 import { LcgFormEntity } from '../../lcg-form/entities/lcg-form.entity';
