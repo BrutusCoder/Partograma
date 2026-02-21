@@ -1,14 +1,15 @@
 // =====================================================================
-// Unit Entity — Unidade de saúde / maternidade
-// Fonte: User.unitId (types.ts) + Keycloak user attribute "unit_id"
+// Unit Entity — Unidade de saúde / maternidade (tenant)
+// Fonte: @partograma/domain → interface Unit + MultiTenantEntity
 // Campos marcados (a confirmar) poderão ser renomeados/estendidos.
 // =====================================================================
 
 import { Entity, Column } from 'typeorm';
+import { Unit as IUnit } from '@partograma/domain';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 @Entity('units')
-export class UnitEntity extends BaseEntity {
+export class UnitEntity extends BaseEntity implements Omit<IUnit, 'createdAt' | 'updatedAt'> {
   /** Nome da unidade de saúde (a confirmar) */
   @Column({ type: 'varchar', length: 255 })
   name!: string;

@@ -24,6 +24,22 @@ import {
   AuditOperation,
 } from './enums';
 
+// --- Entidade: Unit (multi-tenant) ---
+// Fonte: Plano_Implementacao §3.1 — "Unit: unidade hospitalar (multi-tenant)"
+// Campos derivados da API entity (UnitEntity) e validados contra o plano.
+// Campos marcados (a confirmar) poderão ser estendidos em sprints futuros.
+export interface Unit {
+  id: string;
+  /** Nome da unidade de saúde / maternidade */
+  name: string;
+  /** Código externo da unidade (ex.: CNES). Único quando presente. (a confirmar) */
+  externalId?: string | null;
+  /** Indica se a unidade está ativa no sistema */
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // --- Entidade: User ---
 export interface User {
   id: string;
@@ -33,6 +49,7 @@ export interface User {
   lastName: string;
   role: UserRole;
   isActive: boolean;
+  /** FK para Unit — escopo multi-tenant (Unit 1:N User) */
   unitId?: string;
   createdAt: string;
   updatedAt: string;
