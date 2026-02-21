@@ -5,7 +5,7 @@
 # =====================================================================
 
 # ── Stage 1: base ─────────────────────────────────────────────────────
-FROM node:22-alpine AS base
+FROM node:25-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.30.0 --activate
 WORKDIR /app
 
@@ -36,7 +36,7 @@ RUN pnpm --filter @partograma/domain build \
 
 # ── Stage 4: runtime ─────────────────────────────────────────────────
 # Imagem final mínima — Next.js standalone server
-FROM node:22-alpine AS runtime
+FROM node:25-alpine AS runtime
 
 LABEL maintainer="Equipe Partograma <partograma@equipe.dev>"
 LABEL org.opencontainers.image.source="https://github.com/BrutusCoder/Partograma"
