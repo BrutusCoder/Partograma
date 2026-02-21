@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   transpilePackages: ['@partograma/domain', '@partograma/validators', '@partograma/ui'],
   experimental: {
     // Otimizações de performance

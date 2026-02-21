@@ -1,0 +1,54 @@
+# =====================================================================
+# .dockerignore — Monorepo Partograma LCG
+# Exclui arquivos desnecessários do build context
+# =====================================================================
+
+# Dependências (reinstaladas no container)
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Ambiente local
+.env
+.env.local
+.env.*.local
+
+# Docker data volumes
+docker-data/
+pgdata/
+redisdata/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Documentação (não necessária na imagem)
+Documentação_Protocolos/
+Docs/
+README.md
+LICENSE
+
+# Docker configs (evita recursão)
+docker-compose.yml
+docker-compose.*.yml
+apps/*/Dockerfile
