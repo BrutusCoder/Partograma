@@ -1,0 +1,3 @@
+# pre-push — Partograma LCG
+# Executa suite de testes antes do push. Impede push se testes falharem.
+pnpm run --parallel test

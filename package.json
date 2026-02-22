@@ -30,6 +30,19 @@
     "docker:logs": "docker compose logs -f",
     "db:migrate": "pnpm --filter @partograma/api migration:run",
     "db:seed": "pnpm --filter @partograma/api seed:run",
-    "clean": "pnpm run --parallel clean && rm -rf node_modules"
+    "clean": "pnpm run --parallel clean && rm -rf node_modules",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write"
+    ],
+    "*.{json,css,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

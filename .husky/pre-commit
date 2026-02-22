@@ -1,0 +1,5 @@
+# pre-commit — Partograma LCG
+# 1. Prettier: auto-formata arquivos staged (lint-staged)
+# 2. ESLint: lint em todos os pacotes do monorepo (paralelo)
+pnpm lint-staged
+pnpm run --parallel lint
