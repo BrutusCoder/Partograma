@@ -1,3 +1,11 @@
 packages:
-  - 'apps/*'
-  - 'libs/*'
+  - apps/*
+  - libs/*
+
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@scarf/scarf'
+  - bcrypt
+  - msgpackr-extract
+  - sharp
+  - unrs-resolver
