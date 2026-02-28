@@ -1,0 +1,400 @@
+# RELATÓRIO DE AUDITORIA TÉCNICA — SPRINT 3
+
+**Partograma LCG OMS 2020 · Auditoria Técnica Fullstack**
+**Data**: 22/02/2026 · **Auditor**: QA Sênior / Arquiteto · **Status**:
+
+## RESUMO EXECUTIVO
+
+> **⚠️ APROVADA COM RESSALVAS**
+
+A Sprint 3 entregou implementação funcional e construível das Seções 5-6, AlertEvent, PlanService (Seção 7) e UI tabela. O motor de alertas está corretamente integrado, as regras RG-7.1/7.2/7.4 e BUG-10 foram implementadas, e ambos os builds passam. Contudo, foram identificados **1 bug crítico de segurança clínica (RG-6.1)**, **2 riscos de integridade de dados (ausência de transações DB)**, **1 inconsistência de schema entre entidades**, e **5 bugs de estado no frontend** que podem comprometer a usabilidade clínica em sessões reais. Nenhum bloqueia build ou testes básicos, mas os bugs críticos **devem ser corrigidos antes de conectar banco de dados real**.
+
+---
+
+## I. ANÁLISE DETALHADA — BACKEND (NestJS / TypeORM)
+
+### ✅ Pontos Positivos
+
+| Item                                                                                                  | Avaliação |
+| ----------------------------------------------------------------------------------------------------- | --------- |
+| **Section5Dto** — 4 campos tipados com `@IsInt`/`@IsNumber`, limites Min/Max por RG-5.1/5.2/5.3/5.4   | Correto   |
+| **Section6Dto** — `@ValidateIf((o) => o.oxytocinUsed === true)` com `@IsNotEmpty` (BUG-02 pattern)    | Correto   |
+| **AlertEventEntity** — schema `lcg`, FK com CASCADE, índice parcial `WHERE is_resolved = false`       | Excelente |
+| **Migration** — DDL completa com PK, FK, 3 índices, IF NOT EXISTS, down() reversível                  | Correto   |
+| **PlanService.create()** — RG-7.1 (hasAlert), RG-7.2 (ConflictException), RG-7.4 (UPDATE alertEvents) | Correto   |
+| **BUG-01 FIX** — `section5Provided` flag no `validateObservation()` suprime alertas de zeros default  | Correto   |
+| **BUG-03 FIX** — `checkAndExpire12h()` invocado antes da criação                                      | Correto   |
+| **AlertResult** → **AlertEventEntity** — mapeamento completo dos campos                               | Correto   |
+
+---
+
+### 🔴 BUG-B1 — CRÍTICO: RG-6.1 Validation Logic Invertida
+
+**Arquivo**: observation.service.ts
+
+```typescript
+// CÓDIGO ATUAL — INCORRETO
+if (dto.section6?.oxytocinUsed && dto.section5) {
+  const s5 = dto.section5;
+  if (s5.contractionsPer10Min === undefined || null || ...) {
+    throw new BadRequestException('RG-6.1...');
+  }
+}
+```
+
+**Problema**: A condição `&& dto.section5` faz a validação só disparar quando `section5` **está presente**. Mas dentro desse bloco, verifica se os campos são `undefined/null` — campos que **não podem ser undefined** quando section5 está presente (pois são `!: number` no DTO). O resultado prático: **se `oxytocinUsed=true` e `section5` for completamente omitida (undefined), o `&&` curto-circuita e nenhuma exceção é lançada**, violando RG-6.1.
+
+Adicionalmente, a expressão `=== undefined || null` é um bug JavaScript: `undefined || null` sempre avalia `null` (truthy ao negar), então na verdade o segundo operando `|| null` nunca tem efeito lógico — a condição fica `=== undefined`.
+
+**Correção**:
+
+```typescript
+// CORRETO: verifica ausência total de section5 quando ocitocina está em uso
+if (dto.section6?.oxytocinUsed && !dto.section5) {
+  throw new BadRequestException(
+    'RG-6.1: Seção 5 (contrações) é obrigatória quando ocitocina está em uso.',
+  );
+}
+```
+
+---
+
+### 🔴 BUG-B2 — ALTO: Ausência de Transações DB em Operações Multi-write
+
+**Arquivos**: observation.service.ts, plan.service.ts
+
+**ObservationService.create()**: Faz `obsRepo.save()` e depois `alertEventRepo.save()` sem transação. Se a segunda operação falhar, persiste uma observação sem seus AlertEvents — o rastreio clínico fica incompleto e o `hasAlert=true` fica sem registros correspondentes na tabela `alert_events`.
+
+**PlanService.create()**: Faz `planRepo.save()` e depois `alertEventRepo.update()` sem transação. Se a resolução dos AlertEvents falhar, o Plan fica criado mas alertas permanecem `is_resolved=false`, contradizendo RG-7.4.
+
+**Correção** (padrão TypeORM QueryRunner):
+
+```typescript
+// observation.service.ts — create()
+await this.obsRepo.manager.transaction(async (em) => {
+  const saved = await em.save(ObservationSetEntity, observation);
+  if (alerts.length > 0) {
+    await em.save(
+      AlertEventEntity,
+      alertEntities.map((e) => ({ ...e, observationSetId: saved.id })),
+    );
+  }
+  return saved;
+});
+```
+
+---
+
+### 🟠 BUG-B3 — ALTO: Race Condition no PlanService (Check-then-Act)
+
+**Arquivo**: plan.service.ts
+
+```typescript
+const existing = await this.planRepo.findOne({ where: { observationSetId } });
+if (existing) throw new ConflictException(...);
+// gap de tempo ← duas requisições concorrentes passam aqui
+const plan = this.planRepo.create({ ... });
+await this.planRepo.save(plan);
+```
+
+Com duas requisições simultâneas, ambas passam pelo `findOne()` sem retorno, e ambas tentam `save()`. A unique constraint no banco vai barrar a segunda — mas retornará um erro TypeORM não tratado (500 com stack trace), não o 409 esperado.
+
+**Correção**: Usar `INSERT ... ON CONFLICT DO NOTHING` ou envolver em try/catch para capturar `QueryFailedError` com código `23505` (PostgreSQL unique violation) e relançar como `ConflictException`.
+
+---
+
+### 🟠 BUG-B4 — ALTO: Inconsistência de Schema entre Entidades TypeORM
+
+**Arquivos**: observation-set.entity.ts, alert-event.entity.ts
+
+```typescript
+// AlertEventEntity — COM schema ✅
+@Entity({ name: 'alert_events', schema: 'lcg' })
+
+// ObservationSetEntity — SEM schema ❌
+@Entity('observation_sets')
+
+// PlanEntity — SEM schema ❌
+@Entity('plans')
+```
+
+As migrações criam todas as tabelas no schema `lcg`, mas `ObservationSetEntity` e `PlanEntity` não declaram `schema: 'lcg'`. Se `search_path` da conexão PG não incluir `lcg` como padrão, TypeORM vai gerar queries para `public.observation_sets` e `public.plans` — gerando erro 42P01 (relation does not exist). O `AlertEventEntity` está correto; as demais entidades são inconsistentes.
+
+**Correção**:
+
+```typescript
+@Entity({ name: 'observation_sets', schema: 'lcg' })
+export class ObservationSetEntity extends BaseEntity { ... }
+
+@Entity({ name: 'plans', schema: 'lcg' })
+export class PlanEntity extends BaseEntity { ... }
+```
+
+Verificar também `LcgFormEntity`, `EpisodeEntity`, `UnitEntity`, `UserEntity`.
+
+---
+
+### 🟡 BUG-B5 — MÉDIO: `lcg_form_id` sem FK na tabela `alert_events`
+
+**Arquivo**: 1772200000000-Sprint3AlertEvents.ts
+
+A FK `observation_set_id → lcg.observation_sets(id)` existe. Mas `lcg_form_id` não tem FK explícita (descrito como "FK lógica" no entity para evitar ciclo). O problema: sem FK, registros de `alert_events` podem referenciar um `lcg_form_id` que foi excluído, corrompendo relatórios de auditoria.
+
+**Recomendação**: Adicionar FK com `ON DELETE CASCADE` mesmo que não haja `ManyToOne` na entidade (constraint de DB é independente do ORM).
+
+---
+
+### 🟡 BUG-B6 — MÉDIO: RG-7.3 Imutabilidade do Plan — sem resposta HTTP 405
+
+**Arquivo**: plan.controller.ts
+
+RG-7.3 declara Plan como imutável, mas não existe endpoint de update. Isso é correto por omissão. Porém, sem um guard explícito com `@Put() → throw new MethodNotAllowedException()`, qualquer desenvolvedor futuro que adicionar um `@Patch` não terá aviso de violação arquitetural. Documentar com comentário JSDoc no controller é mínimo; preferivelmente adicionar o método explicitamente retornando 405.
+
+---
+
+### 🟡 BUG-B7 — MÉDIO: `reassessmentTime` sem validação de data futura
+
+**Arquivo**: create-plan.dto.ts
+
+`@IsISO8601()` valida formato mas não impede datas no passado. Clinicamente, reavaliação programada no passado é incoerente. Sugestão: criar decorator customizado `@IsFutureDate()` ou adicionar `@MinDate(new Date())` com `class-validator`.
+
+---
+
+### LACUNA DE AUDITORIA — L-01: Validação `surveillance_notes` / Seção 6
+
+O documento de requisitos menciona `surveillanceNotes` como campo de texto livre para a Seção 6. O campo não existe em `Section6Dto`, `Section6Data` (domain) nem na UI. Confirmação clínica necessária se este campo é obrigatório no LCG 2020 ou apenas extensão local.
+
+---
+
+## II. ANÁLISE DETALHADA — FRONTEND (Next.js)
+
+### ✅ Pontos Positivos
+
+| Item                                                                                             | Avaliação |
+| ------------------------------------------------------------------------------------------------ | --------- |
+| **BUG-10 FIX** — `pendingPlanObsId` bloqueia "Nova Rodada" e renderiza formulário Seção 7 inline | Correto   |
+| **BUG-09 FIX** — `extractErrorMessage()` trata erros Axios extraindo `response.data.message`     | Correto   |
+| **AlertBadge** — mapeamento visual por severidade (LOW/MEDIUM/HIGH/CRITICAL) com CSS Tailwind    | Correto   |
+| **`handleSubmitObs`** — monta `section5`/`section6` opcionais corretamente baseado em checkboxes | Correto   |
+| **`handleSubmitPlan`** — libera `pendingPlanObsId` + limpa `lastAlerts` após sucesso             | Correto   |
+| **Tabela** — colunas Seção 5 com destaque azul, coluna Ocitocina com destaque roxo               | Correto   |
+| **Botão "Nova Rodada"** — `disabled={planPending}` com texto de estado "⛔ Plan pendente"        | Correto   |
+
+---
+
+### 🔴 BUG-F1 — CRÍTICO: `DEFAULT_SECTION5` com valores clínicos não-neutros
+
+**Arquivo**: page.tsx
+
+```typescript
+const DEFAULT_SECTION5: Section5Data = {
+  contractionsPer10Min: 3, // ← valor normal — simula dado real
+  contractionDurationSec: 40, // ← valor normal
+  cervicalDilationCm: 5, // ← 5cm — dispara progressão cervical!
+  descentStation: 2,
+};
+```
+
+Quando o clínico marca "Incluir Seção 5" e **não altera os valores** (ou deixa algum campo em branco inadvertidamente), submete dados **clinicamente plausíveis porém fictícios**: dilatação de 5cm sempre. Isso pode gerar alertas CERVICAL_PROGRESSION_SLOW falsos (se a observação anterior também tinha 5cm com threshold de 360min). Pior, o `cervicalDilationCm=5` vai sobrescrever a progressão real registrada em rodadas anteriores.
+
+**Correção**: Substituir pelos valores mínimos aceitos ou usar `0` com label de alerta no form:
+
+```typescript
+const DEFAULT_SECTION5: Section5Data = {
+  contractionsPer10Min: 0,
+  contractionDurationSec: 0,
+  cervicalDilationCm: 0,
+  descentStation: 0,
+};
+```
+
+---
+
+### 🟠 BUG-F2 — ALTO: Estado de `pendingPlanObsId`, `savedPlan` e `lastAlerts` não resetado ao trocar LCG
+
+**Arquivo**: page.tsx
+
+O `useEffect` que carrega observações ao mudar `selectedFormId` não reseta o estado de Plan:
+
+```typescript
+useEffect(() => {
+  if (!selectedFormId) return;
+  observationApi.listByLcgForm(selectedFormId).then(setObservations).catch(console.error);
+  // ← faltam: setPendingPlanObsId(null), setSavedPlan(null), setLastAlerts([])
+}, [selectedFormId]);
+```
+
+**Consequência**: Ao trocar para o LCG #2, o "Plan pendente" do LCG #1 continua visível e bloqueando "Nova Rodada" no LCG #2, que pode estar sem alertas.
+
+**Correção**:
+
+```typescript
+useEffect(() => {
+  if (!selectedFormId) return;
+  setObservations([]);
+  setPendingPlanObsId(null);
+  setSavedPlan(null);
+  setLastAlerts([]);
+  setError(null);
+  observationApi.listByLcgForm(selectedFormId).then(setObservations).catch(console.error);
+}, [selectedFormId]);
+```
+
+---
+
+### 🟠 BUG-F3 — ALTO: Estado de Plan Pendente não Hidratado no Carregamento da Página
+
+**Arquivo**: page.tsx
+
+O carregamento inicial busca `episode` e `lcgForms`, mas **não verifica se existe alguma observação com `hasAlert=true` sem Plan correspondente**. Se o usuário:
+
+1. Registra observação → recebe alertas → fecha o browser
+2. Reabre a página
+
+O `pendingPlanObsId` começa como `null` e o formulário de Plan inline não aparece, mas `hasAlert=true` está no banco. O clínico pode criar novas observações sem preencher o Plan pendente, violando RG-7.1 silenciosamente a nível de front.
+
+**Correção**: No carregamento inicial do form ativo, checar a última observação com `hasAlert=true` que não tenha Plan resolvido, via `planApi.get()`.
+
+---
+
+### 🟡 BUG-F4 — MÉDIO: Seção 6 — Medicamentos e Fluidos EV sempre enviados como `[]`
+
+**Arquivo**: page.tsx
+
+```typescript
+const section6: Section6Data | undefined = includeSection6
+  ? { ..., medications: [], ivFluids: [] }   // ← sempre arrays vazios
+  : undefined;
+```
+
+Toda a infra-estrutura para `MedicationDto` e `IvFluidDto` existe no backend mas o frontend não expõe nenhum controle para adicioná-los. Isso cria assimetria entre o contrato da API e a UI.
+
+---
+
+### 🟡 BUG-F5 — MÉDIO: Sem Validação de Data Futura para `reassessmentTime` no Plan Form
+
+**Arquivo**: page.tsx
+
+```tsx
+<input type="datetime-local" ... />
+```
+
+Falta atributo `min={new Date().toISOString().slice(0, 16)}` para impedir seleção de datas passadas, e validação no `handleSubmitPlan` antes de enviar.
+
+---
+
+### 🟡 BUG-F6 — MÉDIO: `X-User-Id` Hardcoded — Auditoria Ineficaz
+
+**Arquivo**: api-client.ts
+
+```typescript
+'X-User-Id': '00000000-0000-0000-0000-000000000000',
+```
+
+Todos os campos `recordedBy` e `createdBy` no banco ficam com o mesmo UUID nulo. O rastreio de quem registrou cada observação/plan é completamente perdido. Reconhecido como pendência Sprint 5 (Keycloak), mas o impacto em auditoria clínica é severo se não tratado antes de uso real.
+
+---
+
+### 🟡 BUG-F7 — BAIXO: Tabela de Observações sem Paginação
+
+**Arquivo**: page.tsx
+
+Para um parto de 12h com rodadas a cada 30min, temos ~24 registros. Sem virtual scrolling ou paginação, o DOM cresce linearmente. Não é crítico para o MVP mas pode degradar em dispositivos móveis de baixo desempenho comuns em ambiente hospitalar.
+
+---
+
+## III. ANÁLISE CLÍNICA E ALINHAMENTO COM PLANO
+
+### Conformidade com `Plano_Implementacao_TS_LCG_2020`
+
+| Requisito do Plano                                                     | Status                                     |
+| ---------------------------------------------------------------------- | ------------------------------------------ |
+| §5.1 — Motor síncrono ao criar ObservationSet                          | ✅ Implementado                            |
+| §5.3 — Progressão cervical por tempo (CERVICAL_PROGRESSION_THRESHOLDS) | ✅ Implementado                            |
+| §5.3 — Ocitocina exige FCF + contrações (RG-6.1)                       | ⚠️ Lógica invertida (BUG-B1)               |
+| §3.1 — Plan 1:1 com ObservationSet                                     | ✅ Implementado                            |
+| §4.2 — POST/GET `/observations/:id/plan`                               | ✅ Implementado                            |
+| §6.2 — UI tabela interativa com alertas visuais                        | ✅ Implementado                            |
+| Sprint 3 escopo: Seções 5-6                                            | ✅ Implementado                            |
+| Sprint 4 escopo: Seção 7 + AlertEngine completo                        | ✅ Antecipado (positivo)                   |
+| Sprint 5 escopo: RBAC + Keycloak                                       | ❌ Não iniciado (correto para esta sprint) |
+
+### Inconsistências Clínicas
+
+**CL-01: Escala `descentStation` 0–5**
+
+O LCG 2020 não define estação de descida com escala 0–5 (essa é uma escala local). O padrão internacional usa -5 a +5 (sistema De Lee) ou -3 a +3 (sistema americano). A implementação usa `@Max(5)/@Min(0)` e o comentário diz "escala local" — necessita validação clínica para garantir conformidade com protocolo local antes de homologação.
+
+**CL-02: `contractionsPer10Min` — Alerta CONTRACTIONS_LOW com min=3**
+
+```typescript
+contractionsPer10Min: { min: 3, max: 5 },
+```
+
+O alerta CONTRACTIONS_LOW dispara quando `contractionsPer10Min <= 2`. Porém, na Fase Latente do TP, 1-2 contrações/10min são normais. O alerta só deveria ser suprimido na Fase Ativa. O `section5Provided=false` já evita alertas com zeros — mas se o clínico informa explicitamente 2 contrações, o alerta dispara mesmo que seja fase latente ou transição. Necessita revisão do contexto de ativação por fase.
+
+**CL-03: `oxytocinDropsPerMin` — Limite Máximo 60 gts/min sem Referência**
+
+```typescript
+@Max(60, { message: 'oxytocinDropsPerMin máximo: 60 gotas/min' })
+```
+
+Protocolos standard de ocitocina variam de 20 a 40 gts/min máximo com equipo padrão (20 gts/mL). O limite de 60 não está justificado na documentação. Confirmar com equipe clínica.
+
+**CL-04: `checkCervicalProgression` — Threshold indexado por `previousCm` (floor)**
+
+```typescript
+const threshold = CERVICAL_PROGRESSION_THRESHOLDS[previousCm];
+```
+
+O threshold é buscado pela dilatação **anterior** (floor). Isso é semanticamente correto: "quanto tempo máximo para progredir DE [previousCm] para [previousCm+1]". Confirmado que a lógica está correta para o LCG, mas merece testes unitários com casos como previousCm=4.9/currentCm=5.1 para validar o comportamento na transição de fases.
+
+---
+
+## IV. LISTA CONSOLIDADA DE BUGS / INCONSISTÊNCIAS
+
+| ID     | Severidade | Componente                                | Descrição                                                                                   | Ação                                           |
+| ------ | ---------- | ----------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| BUG-B1 | 🔴 Crítico | observation.service.ts                    | RG-6.1: condição `&& dto.section5` inverte lógica; oxytocinUsed sem section5 passa sem erro | Corrigir para `!dto.section5`                  |
+| BUG-B2 | 🔴 Alto    | observation.service.ts, plan.service.ts   | Multi-write DB sem transação — inconsistência parcial se segunda operação falhar            | Adicionar QueryRunner transaction              |
+| BUG-B3 | 🟠 Alto    | plan.service.ts                           | Race condition check-then-act na criação de Plan; violação unique retorna 500               | Capturar `QueryFailedError` 23505 → 409        |
+| BUG-B4 | 🟠 Alto    | observation-set.entity.ts, plan.entity.ts | Ausência de `schema: 'lcg'` nas entidades; queries podem falhar sem `search_path` correto   | Adicionar schema nas `@Entity()`               |
+| BUG-B5 | 🟡 Médio   | Migration Sprint3                         | `lcg_form_id` sem FK no banco — integridade referencial não garantida                       | Adicionar FK na migration                      |
+| BUG-B6 | 🟡 Médio   | plan.controller.ts                        | RG-7.3 imutabilidade não tem método explícito HTTP 405                                      | Documentar ou adicionar guard                  |
+| BUG-B7 | 🟡 Médio   | create-plan.dto.ts                        | `reassessmentTime` aceita datas passadas                                                    | Validador de data futura                       |
+| BUG-F1 | 🔴 Crítico | page.tsx DEFAULT_SECTION5                 | Defaults não-neutros (5cm dilation) geram dados fictícios/falsos positivos de progressão    | Resetar para zeros                             |
+| BUG-F2 | 🟠 Alto    | page.tsx useEffect                        | `pendingPlanObsId`, `savedPlan`, `lastAlerts`, `error` não limpos ao trocar LCG form        | Limpar no useEffect [selectedFormId]           |
+| BUG-F3 | 🟠 Alto    | page.tsx load inicial                     | Plan pendente no banco não é hidratado no carregamento da página                            | Verificar `hasAlert` + `planApi.get()` no load |
+| BUG-F4 | 🟡 Médio   | page.tsx section6                         | `medications` e `ivFluids` sempre `[]`; UI de medicamentos faltando                         | Implementar UI ou documentar como pendência    |
+| BUG-F5 | 🟡 Médio   | page.tsx plan form                        | `reassessmentTime` sem `min` = data atual — aceita passado                                  | Adicionar `min` ao input e validar no handler  |
+| BUG-F6 | 🟡 Médio   | api-client.ts                             | UUID nulo fixo como `X-User-Id` — auditoria clínica inoperante                              | Sprint 5: Keycloak token                       |
+| BUG-F7 | 🟢 Baixo   | page.tsx tabela                           | Sem paginação — degradação em TP longo                                                      | Virtual scroll ou paginação                    |
+
+Total: **4 bugs críticos/altos no backend** · **3 bugs críticos/altos no frontend** · **7 médios/baixos**
+
+---
+
+## V. RECOMENDAÇÕES PARA SPRINT 4
+
+### Obrigatório antes de habilitar banco de dados real
+
+1. **Corrigir BUG-B1** (RG-6.1 invertida) — 30 min
+2. **Corrigir BUG-F1** (DEFAULT_SECTION5 zeros) — 10 min
+3. **Corrigir BUG-F2** (resetar estado ao trocar form) — 15 min
+4. **Corrigir BUG-B2** (transação DB) — 2h
+5. **Corrigir BUG-B4** (schema nas entidades) — 30 min
+
+### Sprint 4 — Prioridades sugeridas
+
+| Prioridade | Item                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------- |
+| P1         | Implementar autenticação Keycloak real (substituir `X-User-Id` hardcoded)                   |
+| P1         | Corrigir BUG-B3 (race condition PlanService)                                                |
+| P2         | Hidratar estado de Plan pendente no carregamento da página (BUG-F3)                         |
+| P2         | Endpoint `GET /lcg-forms/:id/alert-events?isResolved=false` para listagem de alertas ativos |
+| P2         | Testes unitários Jest para `checkCervicalProgression()` e `checkOxytocinAlerts()`           |
+| P3         | UI de adição de medicamentos / fluidos EV (completar Seção 6)                               |
+| P3         | FK para `lcg_form_id` na tabela `alert_events`                                              |
+| P3         | Testes de integração supertest para o fluxo RG-7.1/7.2/7.4                                  |
+| P4         | AuditLog append-only (adendos) — Sprint 5 escopo original                                   |
+| P4         | Paginação na tabela de observações                                                          |

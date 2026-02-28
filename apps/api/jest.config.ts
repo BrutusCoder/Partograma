@@ -12,10 +12,10 @@ const config: Config = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
-    '^@partograma/domain$': '<rootDir>/../../libs/domain/src/index.ts',
-    '^@partograma/domain/(.*)$': '<rootDir>/../../libs/domain/src/$1',
-    '^@partograma/validators$': '<rootDir>/../../libs/validators/src/index.ts',
-    '^@partograma/validators/(.*)$': '<rootDir>/../../libs/validators/src/$1',
+    '^@partograma/domain$': '<rootDir>/../../../libs/domain/src/index.ts',
+    '^@partograma/domain/(.*)$': '<rootDir>/../../../libs/domain/src/$1',
+    '^@partograma/validators$': '<rootDir>/../../../libs/validators/src/index.ts',
+    '^@partograma/validators/(.*)$': '<rootDir>/../../../libs/validators/src/$1',
   },
 };
 

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bull';
 import { appConfig, databaseConfig, redisConfig, authConfig } from './config/app.config';
+import { AuthModule } from './modules/auth/auth.module';
 import { UnitModule } from './modules/unit/unit.module';
 import { UserModule } from './modules/user/user.module';
 import { EpisodeModule } from './modules/episode/episode.module';
@@ -58,6 +59,7 @@ import { PlanModule } from './modules/plan/plan.module';
     ScheduleModule.forRoot(),
 
     // Módulos da aplicação (Sprint 1)
+    AuthModule,
     UnitModule,
     UserModule,
     EpisodeModule,

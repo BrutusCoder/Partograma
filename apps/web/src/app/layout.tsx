@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '@/styles/globals.css';
+import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
   title: 'Partograma LCG - WHO Labour Care Guide 2020',
@@ -15,7 +16,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <Navbar />
+        <main>{children}</main>
+      </body>
     </html>
   );
 }
